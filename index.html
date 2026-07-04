@@ -1,0 +1,2727 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Bitácora</title>
+<meta name="description" content="Seguimiento diario de habitos">
+<meta name="theme-color" content="#262F2B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bitacora">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #E8E4D6;
+    min-height: 100vh;
+  }
+  .page-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<div id="auth-screen" style="display:none;"></div>
+<div id="app-wrapper" style="display:none;">
+<div id="app-header-user"></div>
+<div id="app" style="font-family: 'Inter', -apple-system, sans-serif;">
+  <p style="text-align:center; padding: 3rem 0; color: #6b756d;">Cargando tu bitácora…</p>
+</div>
+</div>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+  #app * { box-sizing: border-box; }
+
+  #app, #auth-screen {
+    --paper: #E8E4D6;
+    --paper-deep: #D9D3BE;
+    --paper-line: #CBC4AC;
+    --ink: #262F2B;
+    --ink-soft: #6B756D;
+    --stamp-1: #A8402E;
+    --stamp-2: #3B6355;
+    --stamp-3: #B8873A;
+    --stamp-4: #3B5A78;
+    --stamp-5: #6B4557;
+    --stamp-6: #2F6E6E;
+    --gold: #C79B3B;
+    --gold-wash: rgba(199, 155, 59, 0.22);
+  }
+  #app {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 1.75rem 1.5rem 2rem;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  #auth-screen {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 2.5rem 1.75rem;
+    max-width: 380px;
+    margin: 10vh auto 0;
+    font-family: 'Inter', -apple-system, sans-serif;
+  }
+  #auth-screen h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 22px;
+    text-align: center;
+    margin: 0 0 4px;
+  }
+  #auth-screen .auth-sub {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-bottom: 1.75rem;
+  }
+  #auth-screen input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1.5px solid var(--paper-line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    margin-bottom: 10px;
+    outline: none;
+  }
+  #auth-screen input:focus { border-color: var(--ink); }
+  #auth-screen button.auth-submit {
+    width: 100%;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 8px;
+    padding: 11px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  #auth-screen button.auth-submit:hover { opacity: 0.9; }
+  #auth-screen .auth-divider {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin: 16px 0;
+  }
+  #auth-screen button.auth-google {
+    width: 100%;
+    background: #fff;
+    color: var(--ink);
+    border: 1.5px solid var(--paper-line);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  #auth-screen button.auth-google:hover { background: var(--paper-deep); }
+  #auth-screen .auth-switch {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 18px;
+  }
+  #auth-screen .auth-switch button {
+    background: none;
+    border: none;
+    color: var(--ink);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 12.5px;
+    padding: 0;
+  }
+  #auth-screen .auth-error {
+    background: rgba(168, 64, 46, 0.1);
+    color: var(--stamp-1);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 12.5px;
+    margin-bottom: 12px;
+  }
+  #auth-screen .auth-forgot {
+    display: block;
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: 10px;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+  }
+  #app-header-user {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: #6B756D;
+    margin-bottom: 6px;
+  }
+  #app-header-user button {
+    background: none;
+    border: none;
+    color: #6B756D;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 0;
+  }
+
+  #app .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 0.85rem;
+  }
+  #app h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin: 0;
+  }
+  #app .sub {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 3px;
+    text-transform: capitalize;
+  }
+  #app .nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Space Mono', monospace;
+  }
+  #app .nav button {
+    background: transparent;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #app .nav button:hover { background: var(--ink); color: var(--paper); }
+  #app .nav .month-label {
+    font-size: 13px;
+    font-weight: 700;
+    min-width: 118px;
+    text-align: center;
+    text-transform: capitalize;
+  }
+
+  #app .controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  #app .save-status {
+    font-family: 'Space Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    text-align: right;
+    min-height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  #app .save-status .led {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--paper-line);
+    flex-shrink: 0;
+  }
+  #app .save-status.saving .led { background: var(--stamp-3); }
+  #app .save-status.saved .led { background: var(--stamp-2); }
+  #app .save-status.error .led { background: var(--stamp-1); }
+  #app .save-status.error { color: var(--stamp-1); }
+  #app .save-status button {
+    background: none;
+    border: none;
+    color: var(--stamp-1);
+    text-decoration: underline;
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    font-size: 10.5px;
+    padding: 0;
+  }
+
+  #app .add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.4rem;
+  }
+  #app .add-row input {
+    flex: 1;
+    background: #fff;
+    border: 1.5px solid var(--paper-line);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    outline: none;
+  }
+  #app .add-row input:focus { border-color: var(--ink); }
+  #app .add-row button {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 8px;
+    padding: 0 18px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #app .add-row button:hover { opacity: 0.85; }
+
+  #app .empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--ink-soft);
+    font-size: 14px;
+    border: 1.5px dashed var(--paper-line);
+    border-radius: 10px;
+  }
+
+  #app .grid-scroll {
+    overflow-x: auto;
+    border-radius: 10px;
+    padding-bottom: 4px;
+  }
+  #app table.grid {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+  }
+  #app table.grid th, #app table.grid td {
+    padding: 0;
+    text-align: center;
+  }
+  #app .corner {
+    position: sticky;
+    left: 0;
+    background: var(--paper);
+    z-index: 3;
+  }
+  #app .daycol-head {
+    font-family: 'Space Mono', monospace;
+    padding-bottom: 6px;
+  }
+  #app .daycol-head .dow {
+    display: block;
+    font-size: 10px;
+    color: var(--ink-soft);
+    font-weight: 400;
+  }
+  #app .daycol-head .num {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  #app .daycol-head.weekend { color: var(--ink-soft); }
+  #app .daycol-head.today .num {
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    margin: 0 auto;
+  }
+
+  #app .habit-name-cell {
+    position: sticky;
+    left: 0;
+    background: var(--paper);
+    z-index: 2;
+    text-align: left;
+    padding: 8px 10px 8px 4px !important;
+    min-width: 168px;
+    border-bottom: 1px solid var(--paper-line);
+  }
+  #app .habit-name-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #app .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  #app .habit-name-text {
+    font-size: 13px;
+    font-weight: 500;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #app .habit-pct {
+    font-family: 'Space Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+  }
+  #app .del-habit {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 2px 4px;
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+  #app .del-habit:hover { opacity: 1; color: var(--stamp-1); }
+
+  #app .view-toggle {
+    display: flex;
+    border: 1.5px solid var(--ink);
+    border-radius: 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+  #app .view-toggle button {
+    background: transparent;
+    border: none;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px;
+    font-weight: 500;
+    padding: 6px 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #app .view-toggle button.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  #app .link-btn {
+    background: none;
+    border: none;
+    color: var(--ink);
+    text-decoration: underline;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 0;
+  }
+
+  #app .task-card {
+    border: 1.5px solid var(--paper-line);
+    border-radius: 10px;
+    padding: 12px 12px 10px;
+    margin-bottom: 10px;
+  }
+  #app .task-card-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  #app .reorder-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex-shrink: 0;
+  }
+  #app .reorder-btns button {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 9px;
+    line-height: 1;
+    padding: 4px 3px;
+    width: 18px;
+  }
+  #app .reorder-btns button:disabled { opacity: 0.2; cursor: default; }
+  #app .reorder-btns button:not(:disabled):hover { color: var(--ink); }
+  #app .color-input {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1.5px solid var(--paper-line);
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  #app .color-input::-webkit-color-swatch-wrapper { padding: 0; }
+  #app .color-input::-webkit-color-swatch { border: none; border-radius: 50%; }
+  #app .color-input::-moz-color-swatch { border: none; border-radius: 50%; }
+  #app .task-name {
+    font-size: 14.5px;
+    font-weight: 500;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #app .del-habit {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 17px;
+    line-height: 1;
+    padding: 4px 6px;
+    flex-shrink: 0;
+    opacity: 0.55;
+  }
+  #app .del-habit:hover { opacity: 1; color: var(--stamp-1); }
+  #app .task-days {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  #app .task-days-label {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+  }
+  #app .day-chips { display: flex; gap: 5px; }
+  #app .day-chip {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid var(--paper-line);
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  #app .day-chip.on {
+    border-style: solid;
+    color: #fff;
+  }
+
+  #app .cal-wrap { margin-top: 0.2rem; }
+  #app .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  #app .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  #app .cal-cell {
+    min-height: 40px;
+    border: 1.5px solid var(--paper-line);
+    border-radius: 9px;
+    background: transparent;
+    padding: 5px 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+  }
+  #app .cal-cell.empty { visibility: hidden; cursor: default; border: none; }
+  #app .cal-cell .cal-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  #app .cal-cell.today { border-color: var(--ink); border-width: 2px; }
+  #app .cal-cell.selected { background: rgba(0,0,0,0.045); border-color: var(--ink); }
+  #app .cal-cell.complete { background: var(--gold-wash); border-color: var(--gold); }
+  #app .cal-dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 4px;
+  }
+  #app .cal-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  #app .day-detail {
+    margin-top: 14px;
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  #app .day-detail-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    text-transform: capitalize;
+  }
+  #app .day-detail-head button {
+    background: none;
+    border: none;
+    color: var(--paper);
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  #app .day-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--paper-line);
+    padding: 12px 14px;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  #app .day-toggle-row:last-child { border-bottom: none; }
+  #app .day-toggle-circle {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px dashed var(--paper-line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  #app .day-toggle-row.on .day-toggle-circle { border-style: solid; }
+  #app .day-toggle-circle svg { width: 14px; height: 14px; }
+
+  #app .cell-td {
+    border-bottom: 1px solid var(--paper-line);
+    padding: 4px !important;
+  }
+  #app .cell-td.weekend { background: rgba(0,0,0,0.02); }
+  #app .cell {
+    width: 30px;
+    height: 30px;
+    margin: 0 auto;
+    border-radius: 50%;
+    border: 1.5px dashed var(--paper-line);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  #app .cell:hover { border-color: var(--ink-soft); }
+  #app .cell.today-col { border-color: var(--ink); border-style: solid; }
+  #app .cell.on {
+    border-style: solid;
+    border-width: 2px;
+  }
+  #app .cell.on svg { width: 16px; height: 16px; }
+  #app .cell.inactive {
+    border: none;
+    background: var(--ink);
+    opacity: 0.28;
+    cursor: default;
+  }
+  #app .cell.inactive.today-col {
+    opacity: 0.4;
+    box-shadow: 0 0 0 2px var(--ink);
+  }
+
+  #app .daycol-head.complete .num {
+    background: var(--gold);
+    color: var(--ink);
+  }
+  #app .cell-td.complete-day { background: var(--gold-wash); }
+
+  #app .pause-btn {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 4px 6px;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+  #app .pause-btn:hover { opacity: 1; }
+  #app .paused-tag {
+    font-size: 10px;
+    color: var(--ink-soft);
+    border: 1px solid var(--paper-line);
+    padding: 2px 6px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  #app .task-card.paused { opacity: 0.5; }
+
+  #app .day-todo-wrap { padding: 6px 14px 14px; }
+  #app .day-todo-label {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin: 10px 0 8px;
+  }
+  #app .day-todo-list { margin-bottom: 10px; }
+  #app .todo-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--paper-line);
+    flex-wrap: wrap;
+  }
+  #app .todo-row:last-child { border-bottom: none; }
+  #app .todo-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px dashed var(--paper-line);
+    background: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  #app .todo-check svg { width: 11px; height: 11px; }
+  #app .todo-row.done .todo-check {
+    border-style: solid;
+    border-color: var(--gold);
+    background: var(--gold);
+  }
+  #app .todo-text {
+    flex: 1;
+    min-width: 90px;
+    font-size: 13.5px;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+    cursor: text;
+  }
+  #app .todo-row.done .todo-text {
+    text-decoration: line-through;
+    color: var(--ink-soft);
+  }
+  #app .todo-row.missed .todo-check { border-color: var(--ink); border-style: solid; }
+  #app .missed-tag {
+    font-size: 10px;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  #app .todo-del {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+  #app .todo-del:hover { opacity: 1; color: var(--stamp-1); }
+  #app .todo-empty {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    padding: 8px 0;
+  }
+  #app .todo-add-row { display: flex; gap: 8px; }
+  #app .todo-add-row input {
+    flex: 1;
+    border: 1.5px solid var(--paper-line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    color: var(--ink);
+    background: #fff;
+    outline: none;
+  }
+  #app .todo-add-row input:focus { border-color: var(--ink); }
+  #app .todo-add-row button {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 8px;
+    width: 38px;
+    font-size: 17px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  #app .cal-cell { position: relative; }
+  #app .cal-cell.has-todo::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--ink-soft);
+  }
+  #app .cal-cell.todo-complete::after { background: var(--gold); }
+  #app .cal-cell.missed-day::after { background: var(--ink); }
+
+  #app .switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  #app .switch input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ink);
+    cursor: pointer;
+  }
+  #app .reminder-time-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  #app .reminder-time-row input[type="time"] {
+    border: 1.5px solid var(--paper-line);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    color: var(--ink);
+    background: #fff;
+  }
+  #app .reminder-hint {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+
+  #app .backup-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  #app .backup-btn {
+    background: transparent;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+  }
+  #app .backup-btn:hover { background: var(--ink); color: var(--paper); }
+  #app .backup-msg { font-size: 12px; }
+  #app .backup-msg.ok { color: var(--stamp-2); }
+  #app .backup-msg.error { color: var(--stamp-1); }
+
+  #app .year-wrap { overflow-x: auto; padding-bottom: 6px; }
+  #app .year-scale {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  #app .year-scale .sq { width: 10px; height: 10px; border-radius: 2px; }
+  #app .year-grid-outer { display: inline-block; }
+  #app .year-months {
+    display: grid;
+    grid-auto-flow: column;
+    gap: 3px;
+    margin-bottom: 4px;
+    margin-left: 16px;
+  }
+  #app .year-month-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9.5px;
+    color: var(--ink-soft);
+  }
+  #app .year-body { display: flex; gap: 3px; }
+  #app .year-daylabels {
+    display: grid;
+    grid-template-rows: repeat(7, 11px);
+    gap: 3px;
+    font-family: 'Space Mono', monospace;
+    font-size: 8.5px;
+    color: var(--ink-soft);
+    margin-right: 4px;
+  }
+  #app .year-cols {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(7, 11px);
+    gap: 3px;
+  }
+  #app .year-day {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    border: 1px solid var(--paper-line);
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+  }
+  #app .year-day.empty, #app .year-day.future { visibility: hidden; cursor: default; }
+  #app .year-day.no-schedule { background: transparent; border-color: var(--paper-line); }
+  #app .year-day.level-0 { background: var(--paper-line); border-color: var(--paper-line); }
+  #app .year-day.level-1 { background: rgba(199,155,59,0.35); border-color: rgba(199,155,59,0.45); }
+  #app .year-day.level-2 { background: rgba(199,155,59,0.65); border-color: rgba(199,155,59,0.75); }
+  #app .year-day.level-3 { background: var(--gold); border-color: var(--gold); }
+  #app .year-day.today, #app .year-day.selected { box-shadow: 0 0 0 2px var(--ink); }
+
+  #app .foot-hint {
+    margin-top: 1.1rem;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  #app .list-card {
+    border: 1.5px solid var(--paper-line);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  #app .list-card.pending-list { border-color: var(--stamp-1); }
+  #app .list-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  #app .list-name {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    flex: 1;
+    cursor: text;
+  }
+  #app .collapse-btn {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    flex-shrink: 0;
+  }
+  #app .collapse-btn:hover { color: var(--ink); }
+  #app .pending-list .list-name { color: var(--stamp-1); }
+  #app .del-list {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 16px;
+    opacity: 0.6;
+  }
+  #app .del-list:hover { opacity: 1; color: var(--stamp-1); }
+
+  #app .backlog-task {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--paper-line);
+    padding: 8px 0;
+  }
+  #app .backlog-task:last-of-type { border-bottom: none; }
+  #app .drag-handle {
+    flex-shrink: 0;
+    font-size: 17px;
+    color: var(--ink-soft);
+    cursor: grab;
+    touch-action: none;
+    padding: 4px 2px;
+    line-height: 1;
+    user-select: none;
+  }
+  #app .backlog-task-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 13.5px;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: text;
+    white-space: nowrap;
+  }
+  #app .task-btn {
+    background: transparent;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 5px 11px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #app .task-btn:hover { background: var(--ink); color: var(--paper); }
+  #app .task-btn.has-time { background: var(--ink); color: var(--paper); }
+  #app .task-btn:disabled { opacity: 0.35; cursor: default; }
+  #app .task-btn:disabled:hover { background: transparent; color: var(--ink); }
+  #app .task-btn.icon-btn {
+    padding: 6px 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #app .task-btn.icon-btn svg { width: 14px; height: 14px; display: block; }
+  #app .inline-edit-input {
+    flex: 1;
+    min-width: 90px;
+    border: 1.5px solid var(--ink);
+    border-radius: 6px;
+    padding: 4px 7px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    color: var(--ink);
+    background: #fff;
+    outline: none;
+  }
+  #app .task-date-hidden, #app .todo-time-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #app .list-card.drop-target {
+    border-color: var(--ink);
+    background: rgba(0,0,0,0.03);
+  }
+  #app .drop-before { border-top: 2px solid var(--ink); }
+  #app .drop-after { border-bottom: 2px solid var(--ink); }
+  #app .drag-source-hidden { opacity: 0.3; }
+  .bitacora-drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    background: var(--paper, #E8E4D6);
+    border: 1.5px solid var(--ink, #262F2B);
+    border-radius: 10px;
+    padding: 8px 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.95;
+  }
+</style>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
+  signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup,
+  sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { getDatabase, ref, set, get, onValue, off } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCiknNxqFizLXZSmSfMTbvIQKAgRiMiOAA",
+  authDomain: "bitacora-app-a4f59.firebaseapp.com",
+  databaseURL: "https://bitacora-app-a4f59-default-rtdb.firebaseio.com",
+  projectId: "bitacora-app-a4f59",
+  storageBucket: "bitacora-app-a4f59.firebasestorage.app",
+  messagingSenderId: "39720287335",
+  appId: "1:39720287335:web:7869baf5eb025c482ca8c2"
+};
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const db = getDatabase(firebaseApp);
+
+(function () {
+  const STORAGE_KEY = 'bitacora-data';
+  const PALETTE = ['#A8402E', '#3B6355', '#B8873A', '#3B5A78', '#6B4557', '#2F6E6E'];
+  const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const DOWS = ['L','M','M','J','V','S','D'];
+  const DOWS_FULL = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
+  const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
+
+  let currentUser = null;
+  let realtimeRef = null;
+
+  let habits = [];
+  let entries = {};
+  let todos = {};
+  let lists = [{ id: 'pending', name: 'Guardadas' }];
+  let backlogTasks = [];
+  let reminder = { enabled: false, time: '20:00' };
+  let lastNotified = null;
+  let reminderInterval = null;
+  let taskTimeInterval = null;
+  let importStatus = null;
+  let today = new Date();
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth();
+  let saveStatus = 'saved';
+  let retryTimer = null;
+  let saveSeq = 0;
+  let view = 'calendar';
+  let selectedDay = null;
+  let editingTodo = null;
+  let editingTaskId = null;
+  let editingListId = null;
+  let todoDragState = null;
+  let listDragState = null;
+
+  const root = document.getElementById('app');
+
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function dateStr(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
+  function todayStr() { return dateStr(today.getFullYear(), today.getMonth(), today.getDate()); }
+  selectedDay = todayStr();
+  function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
+  function dowMon0(y, m, d) { return (new Date(y, m, d).getDay() + 6) % 7; }
+  function hashRot(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+    return (Math.abs(h) % 17) - 8;
+  }
+  function nextColor() {
+    return PALETTE[habits.length % PALETTE.length];
+  }
+
+  async function load() {
+    let needsSave = false;
+    let rawData = null;
+    try {
+      const snap = await get(userDataRef());
+      if (!snap.exists()) throw new Error('sin datos previos en la nube');
+      rawData = snap.val();
+      habits = rawData.habits || [];
+      entries = rawData.entries || {};
+      reminder = rawData.reminder || { enabled: false, time: '20:00' };
+      lastNotified = rawData.lastNotified || null;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rawData)); } catch (e) {}
+    } catch (e) {
+      // sin datos en la nube todavía: probamos con la copia local (por si venís de la versión anterior, o estás offline)
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw !== null) rawData = JSON.parse(raw);
+      } catch (e2) {}
+      if (rawData) {
+        habits = rawData.habits || [];
+        entries = rawData.entries || {};
+        reminder = rawData.reminder || { enabled: false, time: '20:00' };
+        lastNotified = rawData.lastNotified || null;
+      } else {
+        habits = [
+          { id: 'h1', name: 'Ejercicio', color: PALETTE[0] },
+          { id: 'h2', name: 'Laburo', color: PALETTE[1] },
+          { id: 'h3', name: 'Comer saludable', color: PALETTE[2] }
+        ];
+        entries = {};
+        reminder = { enabled: false, time: '20:00' };
+        lastNotified = null;
+      }
+      needsSave = true;
+    }
+    if (rawData && rawData.todos) {
+      todos = rawData.todos;
+    } else {
+      todos = {};
+      if (rawData && rawData.notes) {
+        Object.keys(rawData.notes).forEach(ds => {
+          const text = (rawData.notes[ds] || '').trim();
+          if (text) todos[ds] = [{ id: 't-' + ds, text: text, done: false }];
+        });
+      }
+      needsSave = true;
+    }
+    lists = (rawData && rawData.lists) ? rawData.lists : [{ id: 'pending', name: 'Guardadas' }];
+    if (!lists.find(l => l.id === 'pending')) lists.unshift({ id: 'pending', name: 'Guardadas' });
+    const pendingRef = lists.find(l => l.id === 'pending');
+    if (pendingRef && pendingRef.name !== 'Guardadas') { pendingRef.name = 'Guardadas'; needsSave = true; }
+    backlogTasks = (rawData && rawData.backlogTasks) ? rawData.backlogTasks : [];
+    habits = habits.map(h => {
+      if (h.activeDays && h.activeDays.length) return h;
+      needsSave = true;
+      return { ...h, activeDays: ALL_DAYS.slice() };
+    });
+    if (sweepOverdueTodos()) needsSave = true;
+    if (needsSave) await save();
+    attachRealtimeSync();
+    scheduleReminderCheck();
+    startTaskTimeChecker();
+    render();
+  }
+
+  function userDataRef() {
+    return ref(db, 'users/' + currentUser.uid + '/data');
+  }
+
+  function attachRealtimeSync() {
+    if (realtimeRef) off(realtimeRef);
+    realtimeRef = userDataRef();
+    onValue(realtimeRef, (snapshot) => {
+      if (!snapshot.exists()) return;
+      // no pisar datos si el usuario está en medio de una edición o un arrastre
+      if (editingTodo || editingTaskId || editingListId || dragState || habitDragState || todoDragState || listDragState) return;
+      const data = snapshot.val();
+      habits = data.habits || [];
+      entries = data.entries || {};
+      todos = data.todos || {};
+      reminder = data.reminder || reminder;
+      lastNotified = (data.lastNotified !== undefined) ? data.lastNotified : lastNotified;
+      lists = data.lists || lists;
+      backlogTasks = data.backlogTasks || [];
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+      render();
+    });
+  }
+
+  function updateStatusUI() {
+    const el = root.querySelector('.save-status');
+    if (!el) return;
+    el.className = 'save-status ' + saveStatus;
+    if (saveStatus === 'saving') {
+      el.innerHTML = '<span class="led"></span>guardando…';
+    } else if (saveStatus === 'saved') {
+      el.innerHTML = '<span class="led"></span>guardado';
+    } else if (saveStatus === 'error') {
+      el.innerHTML = '<span class="led"></span>no se guardó — reintentando <button data-action="retry-save">reintentar ahora</button>';
+    }
+  }
+
+  async function save() {
+    const mySeq = ++saveSeq;
+    saveStatus = 'saving';
+    updateStatusUI();
+    if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+    const payload = { habits, entries, todos, reminder, lastNotified, lists, backlogTasks };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
+    try {
+      await set(userDataRef(), payload);
+      if (mySeq !== saveSeq) return;
+      saveStatus = 'saved';
+      updateStatusUI();
+    } catch (e) {
+      console.error('No se pudo guardar', e);
+      if (mySeq !== saveSeq) return;
+      saveStatus = 'error';
+      updateStatusUI();
+      retryTimer = setTimeout(save, 4000);
+    }
+  }
+
+  function addHabit(name) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    habits.push({ id: 'h' + Date.now(), name: trimmed, color: nextColor(), activeDays: ALL_DAYS.slice() });
+    save();
+    render();
+  }
+
+  function removeHabit(id) {
+    habits = habits.filter(h => h.id !== id);
+    Object.keys(entries).forEach(k => {
+      entries[k] = entries[k].filter(hid => hid !== id);
+      if (entries[k].length === 0) delete entries[k];
+    });
+    save();
+    render();
+  }
+
+  function toggleEntry(ds, habitId) {
+    if (!entries[ds]) entries[ds] = [];
+    const idx = entries[ds].indexOf(habitId);
+    if (idx >= 0) entries[ds].splice(idx, 1);
+    else entries[ds].push(habitId);
+    if (entries[ds].length === 0) delete entries[ds];
+    save();
+    render();
+  }
+
+  let habitDragState = null;
+
+  function startHabitDrag(e, habitId, cardEl) {
+    e.preventDefault();
+    const rect = cardEl.getBoundingClientRect();
+    const ghost = cardEl.cloneNode(true);
+    ghost.className = 'bitacora-drag-ghost bitacora-drag-ghost-card';
+    ghost.style.width = rect.width + 'px';
+    ghost.style.left = rect.left + 'px';
+    ghost.style.top = rect.top + 'px';
+    document.body.appendChild(ghost);
+    cardEl.classList.add('drag-source-hidden');
+    habitDragState = {
+      habitId: habitId,
+      ghost: ghost,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+      targetHabitId: null,
+      insertAfter: false
+    };
+    document.addEventListener('pointermove', onHabitDragMove);
+    document.addEventListener('pointerup', onHabitDragUp, { once: true });
+  }
+
+  function onHabitDragMove(e) {
+    if (!habitDragState) return;
+    habitDragState.ghost.style.left = (e.clientX - habitDragState.offsetX) + 'px';
+    habitDragState.ghost.style.top = (e.clientY - habitDragState.offsetY) + 'px';
+    habitDragState.ghost.style.display = 'none';
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    habitDragState.ghost.style.display = 'block';
+    root.querySelectorAll('.habit-card.drop-before, .habit-card.drop-after').forEach(c => c.classList.remove('drop-before', 'drop-after'));
+    const cardEl = el ? el.closest('.habit-card') : null;
+    habitDragState.targetHabitId = null;
+    if (cardEl && cardEl.getAttribute('data-habit-id') !== habitDragState.habitId) {
+      const r = cardEl.getBoundingClientRect();
+      const after = (e.clientY - r.top) > r.height / 2;
+      habitDragState.targetHabitId = cardEl.getAttribute('data-habit-id');
+      habitDragState.insertAfter = after;
+      cardEl.classList.add(after ? 'drop-after' : 'drop-before');
+    }
+  }
+
+  function onHabitDragUp() {
+    document.removeEventListener('pointermove', onHabitDragMove);
+    const state = habitDragState;
+    habitDragState = null;
+    if (!state) return;
+    state.ghost.remove();
+    root.querySelectorAll('.habit-card.drop-before, .habit-card.drop-after').forEach(c => c.classList.remove('drop-before', 'drop-after'));
+    if (state.targetHabitId) {
+      reorderHabitDrag(state.habitId, state.targetHabitId, state.insertAfter);
+    } else {
+      render();
+    }
+  }
+
+  function reorderHabitDrag(habitId, targetHabitId, insertAfter) {
+    const idx = habits.findIndex(h => h.id === habitId);
+    if (idx === -1) return;
+    const habit = habits.splice(idx, 1)[0];
+    let targetIdx = habits.findIndex(h => h.id === targetHabitId);
+    if (targetIdx === -1) {
+      habits.push(habit);
+    } else {
+      if (insertAfter) targetIdx += 1;
+      habits.splice(targetIdx, 0, habit);
+    }
+    save();
+    render();
+  }
+
+  function updateHabitColor(id, color) {
+    const h = habits.find(h => h.id === id);
+    if (!h) return;
+    h.color = color;
+    save();
+    render();
+  }
+
+  function toggleHabitDay(id, dow) {
+    const h = habits.find(h => h.id === id);
+    if (!h) return;
+    const set = new Set(h.activeDays || ALL_DAYS);
+    if (set.has(dow)) {
+      if (set.size === 1) return;
+      set.delete(dow);
+    } else {
+      set.add(dow);
+    }
+    h.activeDays = Array.from(set).sort((a, b) => a - b);
+    save();
+    render();
+  }
+
+  function activeHabits() {
+    return habits.filter(h => !h.paused);
+  }
+
+  function togglePause(id) {
+    const h = habits.find(h => h.id === id);
+    if (!h) return;
+    h.paused = !h.paused;
+    save();
+    render();
+  }
+
+  function isDayComplete(ds) {
+    const [y, m, d] = ds.split('-').map(Number);
+    const dow = dowMon0(y, m - 1, d);
+    const scheduled = activeHabits().filter(h => (h.activeDays || ALL_DAYS).includes(dow));
+    if (scheduled.length === 0) return false;
+    const dayEntries = entries[ds] || [];
+    return scheduled.every(h => dayEntries.includes(h.id));
+  }
+
+  function dayCompletionRatio(ds) {
+    const [y, m, d] = ds.split('-').map(Number);
+    const dow = dowMon0(y, m - 1, d);
+    const scheduled = activeHabits().filter(h => (h.activeDays || ALL_DAYS).includes(dow));
+    if (scheduled.length === 0) return null;
+    const dayEntries = entries[ds] || [];
+    const ticks = scheduled.filter(h => dayEntries.includes(h.id)).length;
+    return ticks / scheduled.length;
+  }
+
+  function setView(v) {
+    view = v;
+    selectedDay = (v === 'calendar' || v === 'year') ? todayStr() : null;
+    render();
+    if (v === 'grid') scrollGridToToday();
+    if (v === 'year') scrollYearToToday();
+  }
+
+  function changeYear(delta) {
+    viewYear += delta;
+    render();
+    scrollYearToToday();
+  }
+
+  function scrollGridToToday() {
+    requestAnimationFrame(() => {
+      const wrap = root.querySelector('.grid-scroll');
+      const todayHead = root.querySelector('.daycol-head.today');
+      if (wrap && todayHead) {
+        const wrapRect = wrap.getBoundingClientRect();
+        const cellRect = todayHead.getBoundingClientRect();
+        wrap.scrollLeft += (cellRect.left - wrapRect.left);
+      }
+    });
+  }
+
+  function scrollYearToToday() {
+    requestAnimationFrame(() => {
+      const wrap = root.querySelector('.year-wrap');
+      const todayCell = root.querySelector('.year-day.today');
+      if (wrap && todayCell) {
+        const wrapRect = wrap.getBoundingClientRect();
+        const cellRect = todayCell.getBoundingClientRect();
+        const offset = (cellRect.left - wrapRect.left) - wrapRect.width / 2 + cellRect.width / 2;
+        wrap.scrollLeft += offset;
+      }
+    });
+  }
+
+  function selectDay(ds) {
+    selectedDay = selectedDay === ds ? null : ds;
+    render();
+  }
+
+  function sweepOverdueTodos() {
+    const ds0 = todayStr();
+    let changed = false;
+    Object.keys(todos).forEach(ds => {
+      if (ds >= ds0) return;
+      todos[ds].forEach(t => {
+        if (!t.done && !t.missed) {
+          t.missed = true;
+          backlogTasks.push({ id: 'bt' + Date.now() + Math.floor(Math.random() * 10000), listId: 'pending', text: t.text });
+          changed = true;
+        }
+      });
+    });
+    return changed;
+  }
+
+  function addTodo(ds, text) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    if (!todos[ds]) todos[ds] = [];
+    todos[ds].push({ id: 't' + Date.now() + Math.floor(Math.random() * 1000), text: trimmed, done: false });
+    save();
+    render();
+  }
+
+  function toggleTodo(ds, todoId) {
+    const list = todos[ds];
+    if (!list) return;
+    const t = list.find(x => x.id === todoId);
+    if (!t) return;
+    t.done = !t.done;
+    save();
+    render();
+  }
+
+  function deleteTodo(ds, todoId) {
+    if (!todos[ds]) return;
+    todos[ds] = todos[ds].filter(x => x.id !== todoId);
+    if (todos[ds].length === 0) delete todos[ds];
+    save();
+    render();
+  }
+
+  function enterEditTodo(ds, id) {
+    editingTodo = { ds: ds, id: id };
+    render();
+    const el = document.getElementById('edit-todo-' + id);
+    if (el) { el.focus(); el.select(); }
+  }
+
+  function commitTodoEdit(ds, id, value) {
+    const list = todos[ds];
+    if (list) {
+      const t = list.find(x => x.id === id);
+      if (t) {
+        const trimmed = value.trim();
+        if (trimmed) t.text = trimmed;
+      }
+    }
+    editingTodo = null;
+    save();
+    render();
+  }
+
+  function cancelEditTodo() {
+    editingTodo = null;
+    render();
+  }
+
+  function startTodoDrag(e, ds, todoId, rowEl) {
+    e.preventDefault();
+    const rect = rowEl.getBoundingClientRect();
+    const ghost = rowEl.cloneNode(true);
+    ghost.className = 'bitacora-drag-ghost';
+    ghost.style.width = rect.width + 'px';
+    ghost.style.left = rect.left + 'px';
+    ghost.style.top = rect.top + 'px';
+    document.body.appendChild(ghost);
+    rowEl.classList.add('drag-source-hidden');
+    todoDragState = {
+      ds: ds, todoId: todoId, ghost: ghost,
+      offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
+      targetTodoId: null, insertAfter: false
+    };
+    document.addEventListener('pointermove', onTodoDragMove);
+    document.addEventListener('pointerup', onTodoDragUp, { once: true });
+  }
+
+  function onTodoDragMove(e) {
+    if (!todoDragState) return;
+    todoDragState.ghost.style.left = (e.clientX - todoDragState.offsetX) + 'px';
+    todoDragState.ghost.style.top = (e.clientY - todoDragState.offsetY) + 'px';
+    todoDragState.ghost.style.display = 'none';
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    todoDragState.ghost.style.display = 'flex';
+    root.querySelectorAll('.todo-row.drop-before, .todo-row.drop-after').forEach(c => c.classList.remove('drop-before', 'drop-after'));
+    const rowEl = el ? el.closest('.todo-row') : null;
+    todoDragState.targetTodoId = null;
+    if (rowEl && rowEl.getAttribute('data-todo-id') !== todoDragState.todoId) {
+      const r = rowEl.getBoundingClientRect();
+      const after = (e.clientY - r.top) > r.height / 2;
+      todoDragState.targetTodoId = rowEl.getAttribute('data-todo-id');
+      todoDragState.insertAfter = after;
+      rowEl.classList.add(after ? 'drop-after' : 'drop-before');
+    }
+  }
+
+  function onTodoDragUp() {
+    document.removeEventListener('pointermove', onTodoDragMove);
+    const state = todoDragState;
+    todoDragState = null;
+    if (!state) return;
+    state.ghost.remove();
+    root.querySelectorAll('.todo-row.drop-before, .todo-row.drop-after').forEach(c => c.classList.remove('drop-before', 'drop-after'));
+    if (state.targetTodoId) {
+      reorderTodoDrag(state.ds, state.todoId, state.targetTodoId, state.insertAfter);
+    } else {
+      render();
+    }
+  }
+
+  function reorderTodoDrag(ds, todoId, targetTodoId, insertAfter) {
+    const list = todos[ds];
+    if (!list) return;
+    const idx = list.findIndex(t => t.id === todoId);
+    if (idx === -1) return;
+    const item = list.splice(idx, 1)[0];
+    let targetIdx = list.findIndex(t => t.id === targetTodoId);
+    if (targetIdx === -1) {
+      list.push(item);
+    } else {
+      if (insertAfter) targetIdx += 1;
+      list.splice(targetIdx, 0, item);
+    }
+    save();
+    render();
+  }
+
+  function addList(name) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    lists.push({ id: 'l' + Date.now(), name: trimmed });
+    save();
+    render();
+  }
+
+  function deleteList(id) {
+    if (id === 'pending') return;
+    lists = lists.filter(l => l.id !== id);
+    backlogTasks = backlogTasks.filter(t => t.listId !== id);
+    save();
+    render();
+  }
+
+  function addBacklogTask(listId, text) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    backlogTasks.push({ id: 'bt' + Date.now() + Math.floor(Math.random() * 10000), listId: listId, text: trimmed });
+    save();
+    render();
+  }
+
+  function deleteBacklogTask(id) {
+    backlogTasks = backlogTasks.filter(t => t.id !== id);
+    save();
+    render();
+  }
+
+  function toggleListCollapse(id) {
+    const l = lists.find(l => l.id === id);
+    if (!l) return;
+    l.collapsed = !l.collapsed;
+    save();
+    render();
+  }
+
+  function enterEditList(id) {
+    editingListId = id;
+    render();
+    const el = document.getElementById('edit-list-' + id);
+    if (el) { el.focus(); el.select(); }
+  }
+
+  function commitListEdit(id, value) {
+    const l = lists.find(l => l.id === id);
+    if (l && l.id !== 'pending') {
+      const trimmed = value.trim();
+      if (trimmed) l.name = trimmed;
+    }
+    editingListId = null;
+    save();
+    render();
+  }
+
+  function cancelEditList() {
+    editingListId = null;
+    render();
+  }
+
+  function enterEditTask(id) {
+    editingTaskId = id;
+    render();
+    const el = document.getElementById('edit-task-' + id);
+    if (el) { el.focus(); el.select(); }
+  }
+
+  function commitTaskEdit(id, value) {
+    const t = backlogTasks.find(t => t.id === id);
+    if (t) {
+      const trimmed = value.trim();
+      if (trimmed) t.text = trimmed;
+    }
+    editingTaskId = null;
+    save();
+    render();
+  }
+
+  function cancelEditTask() {
+    editingTaskId = null;
+    render();
+  }
+
+  function startListDrag(e, listId, cardEl) {
+    e.preventDefault();
+    const rect = cardEl.getBoundingClientRect();
+    const ghost = cardEl.cloneNode(true);
+    ghost.className = 'bitacora-drag-ghost bitacora-drag-ghost-card';
+    ghost.style.width = rect.width + 'px';
+    ghost.style.left = rect.left + 'px';
+    ghost.style.top = rect.top + 'px';
+    document.body.appendChild(ghost);
+    cardEl.classList.add('drag-source-hidden');
+    listDragState = {
+      listId: listId, ghost: ghost,
+      offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
+      targetListId: null, insertAfter: false
+    };
+    document.addEventListener('pointermove', onListDragMove);
+    document.addEventListener('pointerup', onListDragUp, { once: true });
+  }
+
+  function onListDragMove(e) {
+    if (!listDragState) return;
+    listDragState.ghost.style.left = (e.clientX - listDragState.offsetX) + 'px';
+    listDragState.ghost.style.top = (e.clientY - listDragState.offsetY) + 'px';
+    listDragState.ghost.style.display = 'none';
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    listDragState.ghost.style.display = 'block';
+    root.querySelectorAll('.list-card.drop-before, .list-card.drop-after').forEach(c => c.classList.remove('drop-before', 'drop-after'));
+    const cardEl = el ? el.closest('.list-card') : null;
+    listDragState.targetListId = null;
+    if (cardEl) {
+      const tId = cardEl.getAttribute('data-list-id');
+      if (tId !== listDragState.listId && tId !== 'pending') {
+        const r = cardEl.getBoundingClientRect();
+        const after = (e.clientY - r.top) > r.height / 2;
+        listDragState.targetListId = tId;
+        listDragState.insertAfter = after;
+        cardEl.classList.add(after ? 'drop-after' : 'drop-before');
+      }
+    }
+  }
+
+  function onListDragUp() {
+    document.removeEventListener('pointermove', onListDragMove);
+    const state = listDragState;
+    listDragState = null;
+    if (!state) return;
+    state.ghost.remove();
+    root.querySelectorAll('.list-card.drop-before, .list-card.drop-after').forEach(c => c.classList.remove('drop-before', 'drop-after'));
+    if (state.targetListId) {
+      reorderListDrag(state.listId, state.targetListId, state.insertAfter);
+    } else {
+      render();
+    }
+  }
+
+  function reorderListDrag(listId, targetListId, insertAfter) {
+    const idx = lists.findIndex(l => l.id === listId);
+    if (idx === -1) return;
+    const item = lists.splice(idx, 1)[0];
+    let targetIdx = lists.findIndex(l => l.id === targetListId);
+    if (targetIdx === -1) {
+      lists.push(item);
+    } else {
+      if (insertAfter) targetIdx += 1;
+      lists.splice(targetIdx, 0, item);
+    }
+    save();
+    render();
+  }
+
+  let dragState = null;
+
+  function startDrag(e, taskId, taskEl) {
+    e.preventDefault();
+    const rect = taskEl.getBoundingClientRect();
+    const ghost = taskEl.cloneNode(true);
+    ghost.className = 'bitacora-drag-ghost';
+    ghost.style.width = rect.width + 'px';
+    ghost.style.left = rect.left + 'px';
+    ghost.style.top = rect.top + 'px';
+    document.body.appendChild(ghost);
+    taskEl.classList.add('drag-source-hidden');
+    dragState = {
+      taskId: taskId,
+      sourceEl: taskEl,
+      ghost: ghost,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+      targetListId: null,
+      targetTaskId: null,
+      insertAfter: false
+    };
+    document.addEventListener('pointermove', onDragPointerMove);
+    document.addEventListener('pointerup', onDragPointerUp, { once: true });
+  }
+
+  function onDragPointerMove(e) {
+    if (!dragState) return;
+    dragState.ghost.style.left = (e.clientX - dragState.offsetX) + 'px';
+    dragState.ghost.style.top = (e.clientY - dragState.offsetY) + 'px';
+    dragState.ghost.style.display = 'none';
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    dragState.ghost.style.display = 'flex';
+
+    root.querySelectorAll('.list-card.drop-target').forEach(c => c.classList.remove('drop-target'));
+    root.querySelectorAll('.backlog-task.drop-before, .backlog-task.drop-after').forEach(c => c.classList.remove('drop-before', 'drop-after'));
+
+    const listCard = el ? el.closest('.list-card') : null;
+    if (!listCard) {
+      dragState.targetListId = null;
+      dragState.targetTaskId = null;
+      return;
+    }
+    listCard.classList.add('drop-target');
+    dragState.targetListId = listCard.getAttribute('data-list-id');
+
+    const rowEl = el.closest('.backlog-task');
+    dragState.targetTaskId = null;
+    if (rowEl && rowEl.getAttribute('data-task-id') !== dragState.taskId) {
+      const r = rowEl.getBoundingClientRect();
+      const after = (e.clientY - r.top) > r.height / 2;
+      dragState.targetTaskId = rowEl.getAttribute('data-task-id');
+      dragState.insertAfter = after;
+      rowEl.classList.add(after ? 'drop-after' : 'drop-before');
+    }
+  }
+
+  function onDragPointerUp() {
+    document.removeEventListener('pointermove', onDragPointerMove);
+    const state = dragState;
+    dragState = null;
+    if (!state) return;
+    state.ghost.remove();
+    root.querySelectorAll('.list-card.drop-target').forEach(c => c.classList.remove('drop-target'));
+    root.querySelectorAll('.backlog-task.drop-before, .backlog-task.drop-after').forEach(c => c.classList.remove('drop-before', 'drop-after'));
+    if (state.targetListId) {
+      reorderTaskDrag(state.taskId, state.targetListId, state.targetTaskId, state.insertAfter);
+    } else {
+      render();
+    }
+  }
+
+  function reorderTaskDrag(taskId, targetListId, targetTaskId, insertAfter) {
+    const idx = backlogTasks.findIndex(t => t.id === taskId);
+    if (idx === -1) return;
+    const task = backlogTasks.splice(idx, 1)[0];
+    task.listId = targetListId;
+    if (targetTaskId) {
+      let targetIdx = backlogTasks.findIndex(t => t.id === targetTaskId);
+      if (targetIdx === -1) {
+        backlogTasks.push(task);
+      } else {
+        if (insertAfter) targetIdx += 1;
+        backlogTasks.splice(targetIdx, 0, task);
+      }
+    } else {
+      let lastIdx = -1;
+      for (let i = 0; i < backlogTasks.length; i++) {
+        if (backlogTasks[i].listId === targetListId) lastIdx = i;
+      }
+      if (lastIdx === -1) backlogTasks.push(task);
+      else backlogTasks.splice(lastIdx + 1, 0, task);
+    }
+    save();
+    render();
+  }
+
+  function assignTaskToDay(id, ds) {
+    if (!ds) return;
+    const idx = backlogTasks.findIndex(t => t.id === id);
+    if (idx === -1) return;
+    const task = backlogTasks[idx];
+    backlogTasks.splice(idx, 1);
+    if (!todos[ds]) todos[ds] = [];
+    todos[ds].push({ id: 't' + Date.now() + Math.floor(Math.random() * 1000), text: task.text, done: false });
+    save();
+    render();
+  }
+
+  function scheduleReminderCheck() {
+    if (reminderInterval) { clearInterval(reminderInterval); reminderInterval = null; }
+    if (!reminder.enabled) return;
+    reminderInterval = setInterval(checkReminder, 30000);
+    checkReminder();
+  }
+
+  function checkReminder() {
+    if (!reminder.enabled) return;
+    const now = new Date();
+    const nowStr = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+    if (nowStr !== reminder.time) return;
+    const ds = todayStr();
+    if (lastNotified === ds) return;
+    const dow = dowMon0(now.getFullYear(), now.getMonth(), now.getDate());
+    const scheduled = activeHabits().filter(h => (h.activeDays || ALL_DAYS).includes(dow));
+    const dayEntries = entries[ds] || [];
+    const pending = scheduled.filter(h => !dayEntries.includes(h.id));
+    lastNotified = ds;
+    save();
+    if (scheduled.length > 0 && pending.length > 0) {
+      sendNotification('Te faltan ' + pending.length + ' de ' + scheduled.length + ' hábitos hoy.');
+    }
+  }
+
+  function sendNotification(body) {
+    const show = () => {
+      try { new Notification('Bitácora', { body: body }); } catch (e) { console.warn('No se pudo notificar', e); }
+    };
+    if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+      navigator.serviceWorker.ready.then(reg => {
+        if (reg && reg.showNotification) reg.showNotification('Bitácora', { body: body, icon: 'icons/icon-192.png' });
+        else show();
+      }).catch(show);
+    } else {
+      show();
+    }
+  }
+
+  function startTaskTimeChecker() {
+    if (taskTimeInterval) { clearInterval(taskTimeInterval); taskTimeInterval = null; }
+    taskTimeInterval = setInterval(checkTaskTimes, 30000);
+    checkTaskTimes();
+  }
+
+  function checkTaskTimes() {
+    const ds = todayStr();
+    const list = todos[ds];
+    if (!list) return;
+    const now = new Date();
+    const nowStr = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+    let changed = false;
+    list.forEach(t => {
+      if (t.time && !t.done && !t.timeNotified && t.time === nowStr) {
+        sendNotification('Hora de: ' + t.text);
+        t.timeNotified = true;
+        changed = true;
+      }
+    });
+    if (changed) save();
+  }
+
+  async function setTodoTime(ds, todoId, time) {
+    const list = todos[ds];
+    if (!list) return;
+    const t = list.find(x => x.id === todoId);
+    if (!t) return;
+    t.time = time || null;
+    t.timeNotified = false;
+    if (time && 'Notification' in window && Notification.permission === 'default') {
+      try { await Notification.requestPermission(); } catch (e) {}
+    }
+    save();
+    render();
+  }
+
+  function stashTodoToPending(ds, todoId) {
+    const list = todos[ds];
+    if (!list) return;
+    const t = list.find(x => x.id === todoId);
+    if (!t || t.missed) return;
+    t.missed = true;
+    backlogTasks.push({ id: 'bt' + Date.now() + Math.floor(Math.random() * 10000), listId: 'pending', text: t.text });
+    save();
+    render();
+  }
+
+  async function setReminder(enabled, time) {
+    reminder = { enabled: enabled, time: time || reminder.time };
+    if (enabled && 'Notification' in window && Notification.permission === 'default') {
+      try { await Notification.requestPermission(); } catch (e) {}
+    }
+    save();
+    scheduleReminderCheck();
+    render();
+  }
+
+  function exportBackup() {
+    const data = { habits: habits, entries: entries, todos: todos, reminder: reminder, lists: lists, backlogTasks: backlogTasks, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bitacora-backup-' + todayStr() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importBackup(text) {
+    try {
+      const data = JSON.parse(text);
+      if (!data || !Array.isArray(data.habits)) throw new Error('formato inválido');
+      habits = data.habits.map(h => ({ ...h, activeDays: (h.activeDays && h.activeDays.length) ? h.activeDays : ALL_DAYS.slice() }));
+      entries = data.entries || {};
+      todos = data.todos || {};
+      reminder = data.reminder || reminder;
+      lists = data.lists || [{ id: 'pending', name: 'Guardadas' }];
+      if (!lists.find(l => l.id === 'pending')) lists.unshift({ id: 'pending', name: 'Guardadas' });
+      backlogTasks = data.backlogTasks || [];
+      importStatus = 'ok';
+      save();
+      scheduleReminderCheck();
+    } catch (e) {
+      console.error('Backup inválido', e);
+      importStatus = 'error';
+    }
+    render();
+    setTimeout(() => { importStatus = null; render(); }, 3500);
+  }
+
+  function changeMonth(delta) {
+    viewMonth += delta;
+    if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+    if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+    render();
+    if (view === 'grid') scrollGridToToday();
+  }
+
+  function checkSvg(color) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 18 20 6"></polyline></svg>';
+  }
+
+  function alarmSvg() {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"></circle><path d="M12 9v4l3 2"></path><path d="M5 3 2 6"></path><path d="M22 6l-3-3"></path></svg>';
+  }
+
+  function archiveSvg() {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"></path><path d="M6 12l6 6 6-6"></path><path d="M4 20h16"></path></svg>';
+  }
+
+  function upArrowSvg() {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="M6 11l6-6 6 6"></path></svg>';
+  }
+
+  function calendarSvg() {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path></svg>';
+  }
+
+  function computePct(habitId) {
+    const habit = habits.find(h => h.id === habitId);
+    const activeDays = (habit && habit.activeDays) || ALL_DAYS;
+    const dim = daysInMonth(viewYear, viewMonth);
+    const isCurrentMonth = viewYear === today.getFullYear() && viewMonth === today.getMonth();
+    const countTo = isCurrentMonth ? today.getDate() : dim;
+    let scheduled = 0;
+    let ticks = 0;
+    for (let d = 1; d <= countTo; d++) {
+      const dow = dowMon0(viewYear, viewMonth, d);
+      if (!activeDays.includes(dow)) continue;
+      scheduled++;
+      const ds = dateStr(viewYear, viewMonth, d);
+      if (entries[ds] && entries[ds].includes(habitId)) ticks++;
+    }
+    if (scheduled === 0) return '—';
+    return Math.round((ticks / scheduled) * 100) + '%';
+  }
+
+  function render() {
+    const dim = daysInMonth(viewYear, viewMonth);
+    const isCurrentMonth = viewYear === today.getFullYear() && viewMonth === today.getMonth();
+    const todayDate = today.getDate();
+
+    let html = '';
+    html += '<div class="head">';
+    html += '<div><h1>Bitácora</h1><div class="sub">seguimiento diario</div></div>';
+    html += '<div class="nav">';
+    if (view === 'year') {
+      html += '<button data-action="prev-year" aria-label="Año anterior">‹</button>';
+      html += '<span class="month-label">' + viewYear + '</span>';
+      html += '<button data-action="next-year" aria-label="Año siguiente">›</button>';
+    } else {
+      html += '<button data-action="prev" aria-label="Mes anterior">‹</button>';
+      html += '<span class="month-label">' + MONTHS[viewMonth] + ' ' + viewYear + '</span>';
+      html += '<button data-action="next" aria-label="Mes siguiente">›</button>';
+    }
+    html += '</div></div>';
+
+    html += '<div class="controls-row">';
+    html += '<div class="view-toggle">';
+    html += '<button data-action="view-calendar" class="' + (view === 'calendar' ? 'active' : '') + '">Calendario</button>';
+    html += '<button data-action="view-grid" class="' + (view === 'grid' ? 'active' : '') + '">Grilla</button>';
+    html += '<button data-action="view-tasks" class="' + (view === 'tasks' ? 'active' : '') + '">Tareas</button>';
+    html += '<button data-action="view-habits" class="' + (view === 'habits' ? 'active' : '') + '">Hábitos</button>';
+    html += '<button data-action="view-year" class="' + (view === 'year' ? 'active' : '') + '">Año</button>';
+    html += '</div>';
+    html += '<div class="save-status ' + saveStatus + '"></div>';
+    html += '</div>';
+
+    if (view === 'habits') {
+      html += renderHabitsTab();
+    } else if (view === 'tasks') {
+      html += renderTasksTab();
+    } else if (habits.length === 0) {
+      html += '<div class="empty">Todavía no tenés hábitos. <button class="link-btn" data-action="view-habits">Agregá el primero en Hábitos</button></div>';
+    } else if (view === 'grid') {
+      html += renderGrid(dim, isCurrentMonth, todayDate);
+    } else if (view === 'year') {
+      html += renderYear();
+    } else {
+      html += renderCalendar(dim, isCurrentMonth, todayDate);
+    }
+
+    root.innerHTML = html;
+    updateStatusUI();
+    attachEvents();
+  }
+
+  function renderHabitsTab() {
+    let html = '<div class="add-row">';
+    html += '<input type="text" id="new-habit-input" placeholder="Ej: Meditar" maxlength="30" />';
+    html += '<button data-action="add">Agregar hábito</button>';
+    html += '</div>';
+
+    if (habits.length === 0) {
+      html += '<div class="empty">Todavía no tenés hábitos. Agregá el primero arriba.</div>';
+    } else {
+      habits.forEach((h) => {
+        const activeDays = h.activeDays || ALL_DAYS;
+        html += '<div class="task-card habit-card' + (h.paused ? ' paused' : '') + '" data-habit-id="' + h.id + '">';
+        html += '<div class="task-card-top">';
+        html += '<span class="drag-handle" aria-hidden="true">⠿</span>';
+        html += '<input type="color" class="color-input" data-action="color" data-id="' + h.id + '" value="' + h.color + '" aria-label="Color de ' + escapeHtml(h.name) + '">';
+        html += '<span class="task-name">' + escapeHtml(h.name) + '</span>';
+        if (h.paused) html += '<span class="paused-tag">pausado</span>';
+        html += '<button class="pause-btn" data-action="pause" data-id="' + h.id + '" aria-label="' + (h.paused ? 'Reanudar ' : 'Pausar ') + escapeHtml(h.name) + '">' + (h.paused ? '▶' : '❚❚') + '</button>';
+        html += '<button class="del-habit" data-action="del" data-id="' + h.id + '" aria-label="Eliminar ' + escapeHtml(h.name) + '">×</button>';
+        html += '</div>';
+        html += '<div class="task-days"><span class="task-days-label">Aparece:</span><div class="day-chips">';
+        DOWS.forEach((label, dow) => {
+          const on = activeDays.includes(dow);
+          html += '<button class="day-chip' + (on ? ' on' : '') + '" style="' + (on ? 'background:' + h.color + ';border-color:' + h.color : '') + '" data-action="toggle-day" data-id="' + h.id + '" data-dow="' + dow + '" aria-label="' + DOWS_FULL[dow] + (on ? ', activo' : ', inactivo') + '">' + label + '</button>';
+        });
+        html += '</div></div>';
+        html += '</div>';
+      });
+    }
+
+    html += '<div class="task-card">';
+    html += '<label class="switch"><input type="checkbox" id="reminder-toggle"' + (reminder.enabled ? ' checked' : '') + '><span>Recordatorio diario</span></label>';
+    if (reminder.enabled) {
+      html += '<div class="reminder-time-row"><span class="task-days-label">Hora:</span><input type="time" id="reminder-time" value="' + reminder.time + '"></div>';
+      if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
+        html += '<div class="reminder-hint">Los permisos de notificación están bloqueados para esta app. Activalos desde Chrome (⋮ → Información del sitio → Notificaciones) para que esto funcione.</div>';
+      } else {
+        html += '<div class="reminder-hint">Te avisa si a esa hora todavía te faltan hábitos por marcar. Funciona mientras la app esté instalada — si Android la cierra del todo, no llega.</div>';
+      }
+    }
+    html += '</div>';
+
+    html += '<div class="task-card">';
+    html += '<div class="backup-row">';
+    html += '<button class="backup-btn" data-action="export">Descargar backup (.json)</button>';
+    html += '<button class="backup-btn" data-action="import-trigger">Importar backup</button>';
+    html += '<input type="file" id="import-file" accept="application/json" style="display:none">';
+    if (importStatus === 'ok') html += '<span class="backup-msg ok">Datos importados.</span>';
+    if (importStatus === 'error') html += '<span class="backup-msg error">El archivo no es un backup válido.</span>';
+    html += '</div>';
+    html += '</div>';
+
+    return html;
+  }
+
+  function renderTasksTab() {
+    let html = '<div class="add-row">';
+    html += '<input type="text" id="new-list-input" placeholder="Nueva lista, ej: Tareas hogar" maxlength="30" />';
+    html += '<button data-action="add-list">Agregar lista</button>';
+    html += '</div>';
+
+    const orderedLists = [lists.find(l => l.id === 'pending')].concat(lists.filter(l => l.id !== 'pending')).filter(Boolean);
+
+    orderedLists.forEach(list => {
+      const listTasks = backlogTasks.filter(t => t.listId === list.id);
+      const collapsed = !!list.collapsed;
+      html += '<div class="list-card' + (list.id === 'pending' ? ' pending-list' : '') + '" data-list-id="' + list.id + '">';
+      html += '<div class="list-card-head">';
+      html += '<button class="collapse-btn" data-action="toggle-collapse" data-id="' + list.id + '" aria-label="' + (collapsed ? 'Desplegar' : 'Ocultar') + '">' + (collapsed ? '▸' : '▾') + '</button>';
+      if (list.id !== 'pending') {
+        html += '<span class="drag-handle" aria-hidden="true">⠿</span>';
+      }
+      if (editingListId === list.id) {
+        html += '<input type="text" class="inline-edit-input" id="edit-list-' + list.id + '" value="' + escapeHtml(list.name) + '" maxlength="30" data-id="' + list.id + '">';
+      } else {
+        html += '<span class="list-name" data-action="edit-list" data-id="' + list.id + '">' + escapeHtml(list.name) + '</span>';
+      }
+      if (list.id !== 'pending') {
+        html += '<button class="del-list" data-action="del-list" data-id="' + list.id + '" aria-label="Eliminar lista ' + escapeHtml(list.name) + '">×</button>';
+      }
+      html += '</div>';
+
+      if (!collapsed) {
+        if (listTasks.length === 0) {
+          html += '<div class="todo-empty">' + (list.id === 'pending' ? 'Nada guardado. Bien ahí.' : 'Sin tareas en esta lista.') + '</div>';
+        }
+
+        listTasks.forEach((t) => {
+          html += '<div class="backlog-task" data-task-id="' + t.id + '">';
+          html += '<span class="drag-handle" aria-hidden="true">⠿</span>';
+          if (editingTaskId === t.id) {
+            html += '<input type="text" class="inline-edit-input" id="edit-task-' + t.id + '" value="' + escapeHtml(t.text) + '" maxlength="60" data-id="' + t.id + '">';
+          } else {
+            html += '<span class="backlog-task-text" data-action="edit-task" data-id="' + t.id + '">' + escapeHtml(t.text) + '</span>';
+          }
+          html += '<button class="task-btn icon-btn" data-action="task-today" data-id="' + t.id + '" aria-label="Hacer hoy">' + upArrowSvg() + '</button>';
+          html += '<button class="task-btn icon-btn" data-action="task-otherday" data-id="' + t.id + '" aria-label="Elegir otro día">' + calendarSvg() + '</button>';
+          html += '<input type="date" class="task-date-hidden" id="date-' + t.id + '" data-id="' + t.id + '">';
+          html += '<button class="del-habit" data-action="del-task" data-id="' + t.id + '" aria-label="Eliminar tarea">×</button>';
+          html += '</div>';
+        });
+
+        html += '<div class="todo-add-row"><input type="text" id="add-task-' + list.id + '" placeholder="Agregar tarea…" maxlength="60"><button data-action="add-task" data-list="' + list.id + '">+</button></div>';
+      }
+      html += '</div>';
+    });
+
+    return html;
+  }
+
+  function renderGrid(dim, isCurrentMonth, todayDate) {
+    const dayComplete = {};
+    for (let d = 1; d <= dim; d++) {
+      dayComplete[d] = isDayComplete(dateStr(viewYear, viewMonth, d));
+    }
+
+    let html = '<div class="grid-scroll"><table class="grid"><thead><tr>';
+    html += '<th class="corner"></th>';
+    for (let d = 1; d <= dim; d++) {
+      const dow = dowMon0(viewYear, viewMonth, d);
+      const weekend = dow === 5 || dow === 6;
+      const isToday = isCurrentMonth && d === todayDate;
+      html += '<th class="daycol-head' + (weekend ? ' weekend' : '') + (isToday ? ' today' : '') + (dayComplete[d] ? ' complete' : '') + '">';
+      html += '<span class="dow">' + DOWS[dow] + '</span><span class="num">' + d + '</span>';
+      html += '</th>';
+    }
+    html += '</tr></thead><tbody>';
+
+    activeHabits().forEach((h) => {
+      const activeDays = h.activeDays || ALL_DAYS;
+      html += '<tr>';
+      html += '<td class="habit-name-cell"><div class="habit-name-inner">';
+      html += '<span class="dot" style="background:' + h.color + '"></span>';
+      html += '<span class="habit-name-text">' + escapeHtml(h.name) + '</span>';
+      html += '</div></td>';
+
+      for (let d = 1; d <= dim; d++) {
+        const ds = dateStr(viewYear, viewMonth, d);
+        const dow = dowMon0(viewYear, viewMonth, d);
+        const weekend = dow === 5 || dow === 6;
+        const isToday = isCurrentMonth && d === todayDate;
+        const scheduled = activeDays.includes(dow);
+        html += '<td class="cell-td' + (weekend ? ' weekend' : '') + (dayComplete[d] ? ' complete-day' : '') + '">';
+        if (!scheduled) {
+          html += '<button class="cell inactive' + (isToday ? ' today-col' : '') + '" disabled aria-label="' + escapeHtml(h.name) + ', ' + d + ' de ' + MONTHS[viewMonth] + ', no corresponde"></button>';
+        } else {
+          const on = entries[ds] && entries[ds].includes(h.id);
+          const rot = hashRot(ds + h.id);
+          html += '<button class="cell' + (on ? ' on' : '') + (isToday ? ' today-col' : '') + '" ';
+          html += 'data-action="toggle" data-date="' + ds + '" data-habit="' + h.id + '" ';
+          html += 'style="' + (on ? 'border-color:' + h.color + '; transform: rotate(' + rot + 'deg);' : '') + '" ';
+          html += 'aria-label="' + escapeHtml(h.name) + ', ' + d + ' de ' + MONTHS[viewMonth] + (on ? ', hecho' : ', pendiente') + '">';
+          if (on) html += checkSvg(h.color);
+          html += '</button>';
+        }
+        html += '</td>';
+      }
+      html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    html += '<div class="foot-hint">Tocá un círculo para marcar el día. Se guarda solo.</div>';
+    return html;
+  }
+
+  function renderCalendar(dim, isCurrentMonth, todayDate) {
+    const startOffset = dowMon0(viewYear, viewMonth, 1);
+    const totalCells = Math.ceil((startOffset + dim) / 7) * 7;
+
+    let html = '<div class="cal-wrap"><div class="cal-weekdays">';
+    DOWS.forEach(d => { html += '<span>' + d + '</span>'; });
+    html += '</div><div class="cal-grid">';
+
+    for (let cell = 0; cell < totalCells; cell++) {
+      const dayNum = cell - startOffset + 1;
+      if (dayNum < 1 || dayNum > dim) {
+        html += '<div class="cal-cell empty"></div>';
+        continue;
+      }
+      const ds = dateStr(viewYear, viewMonth, dayNum);
+      const isToday = isCurrentMonth && dayNum === todayDate;
+      const isSelected = selectedDay === ds;
+      const isComplete = isDayComplete(ds);
+      const todoList = todos[ds] || [];
+      const hasTodos = todoList.length > 0;
+      const todosDone = hasTodos && todoList.every(t => t.done);
+      const hasMissed = todoList.some(t => t.missed);
+      const dayHabits = entries[ds] || [];
+      html += '<button class="cal-cell' + (isToday ? ' today' : '') + (isSelected ? ' selected' : '') + (isComplete ? ' complete' : '') + (hasTodos ? ' has-todo' : '') + (todosDone ? ' todo-complete' : '') + (hasMissed ? ' missed-day' : '') + '" data-action="select-day" data-date="' + ds + '">';
+      html += '<span class="cal-num">' + dayNum + '</span>';
+      html += '<div class="cal-dots">';
+      activeHabits().forEach(h => {
+        if (dayHabits.includes(h.id)) html += '<span class="cal-dot" style="background:' + h.color + '"></span>';
+      });
+      html += '</div></button>';
+    }
+    html += '</div></div>';
+
+    if (selectedDay) html += renderDayDetail(selectedDay);
+
+    return html;
+  }
+
+  function renderDayDetail(ds) {
+    const [, sm, sd] = ds.split('-').map(Number);
+    const wdate = new Date(ds + 'T00:00:00');
+    const dow = dowMon0(wdate.getFullYear(), wdate.getMonth(), wdate.getDate());
+    const wd = DOWS_FULL[dow];
+    const dayHabitsScheduled = activeHabits().filter(h => (h.activeDays || ALL_DAYS).includes(dow));
+    let html = '<div class="day-detail">';
+    html += '<div class="day-detail-head"><span>' + wd + ', ' + Number(sd) + ' de ' + MONTHS[sm - 1] + '</span><button data-action="close-day" aria-label="Cerrar">×</button></div>';
+    if (dayHabitsScheduled.length === 0) {
+      html += '<div class="empty" style="border:none; padding:16px 14px;">Ningún hábito programado para este día.</div>';
+    }
+    dayHabitsScheduled.forEach(h => {
+      const on = entries[ds] && entries[ds].includes(h.id);
+      html += '<button class="day-toggle-row' + (on ? ' on' : '') + '" data-action="toggle" data-date="' + ds + '" data-habit="' + h.id + '">';
+      html += '<span class="day-toggle-circle" style="' + (on ? 'border-color:' + h.color : '') + '">';
+      if (on) html += checkSvg(h.color);
+      html += '</span><span>' + escapeHtml(h.name) + '</span></button>';
+    });
+    html += '<div class="day-todo-wrap"><div class="day-todo-label">Para hacer</div>';
+    html += '<div class="day-todo-list">';
+    const todoList = todos[ds] || [];
+    if (todoList.length === 0) {
+      html += '<div class="todo-empty">Sin tareas para este día.</div>';
+    }
+    todoList.forEach(t => {
+      html += '<div class="todo-row' + (t.done ? ' done' : '') + (t.missed ? ' missed' : '') + '" data-todo-id="' + t.id + '">';
+      html += '<span class="drag-handle" aria-hidden="true">⠿</span>';
+      html += '<button class="todo-check" data-action="todo-toggle" data-date="' + ds + '" data-todo="' + t.id + '" aria-label="' + (t.done ? 'Marcar como pendiente' : 'Marcar como hecho') + '">';
+      if (t.done) html += checkSvg('#fff');
+      html += '</button>';
+      if (editingTodo && editingTodo.ds === ds && editingTodo.id === t.id) {
+        html += '<input type="text" class="inline-edit-input" id="edit-todo-' + t.id + '" value="' + escapeHtml(t.text) + '" maxlength="60" data-ds="' + ds + '" data-id="' + t.id + '">';
+      } else {
+        html += '<span class="todo-text" data-action="edit-todo" data-date="' + ds + '" data-todo="' + t.id + '">' + escapeHtml(t.text) + (t.missed ? ' <span class="missed-tag">no cumplida</span>' : '') + '</span>';
+      }
+      if (!t.done) {
+        html += '<button class="task-btn icon-btn' + (t.time ? ' has-time' : '') + '" data-action="todo-time" data-date="' + ds + '" data-todo="' + t.id + '">' + (t.time ? t.time : alarmSvg()) + '</button>';
+        html += '<input type="time" class="todo-time-hidden" id="todotime-' + t.id + '" data-date="' + ds + '" data-todo="' + t.id + '" value="' + (t.time || '') + '">';
+        html += '<button class="task-btn icon-btn" data-action="todo-stash" data-date="' + ds + '" data-todo="' + t.id + '"' + (t.missed ? ' disabled' : '') + ' aria-label="Guardar para más tarde">' + archiveSvg() + '</button>';
+      }
+      html += '<button class="todo-del" data-action="todo-del" data-date="' + ds + '" data-todo="' + t.id + '" aria-label="Eliminar tarea">×</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div class="todo-add-row"><input type="text" id="todo-input" placeholder="Agregar tarea…" maxlength="60"><button data-action="todo-add" data-date="' + ds + '">+</button></div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function buildYearWeeks(year) {
+    const startDow = dowMon0(year, 0, 1);
+    const start = new Date(year, 0, 1 - startDow);
+    const endDow = dowMon0(year, 11, 31);
+    const end = new Date(year, 11, 31 + (6 - endDow));
+    const weeks = [];
+    let cur = new Date(start);
+    while (cur <= end) {
+      const week = [];
+      for (let i = 0; i < 7; i++) {
+        week.push(cur.getFullYear() === year ? dateStr(cur.getFullYear(), cur.getMonth(), cur.getDate()) : null);
+        cur.setDate(cur.getDate() + 1);
+      }
+      weeks.push(week);
+    }
+    return weeks;
+  }
+
+  function renderYear() {
+    const weeks = buildYearWeeks(viewYear);
+    const todayDs = todayStr();
+
+    let html = '<div class="year-wrap"><div class="year-scale"><span>Menos</span>';
+    ['level-0', 'level-1', 'level-2', 'level-3'].forEach(l => { html += '<span class="sq ' + l + '"></span>'; });
+    html += '<span>Más</span></div>';
+
+    html += '<div class="year-grid-outer">';
+    html += '<div class="year-months" style="grid-template-columns: repeat(' + weeks.length + ', 11px);">';
+    let lastMonth = -1;
+    weeks.forEach(week => {
+      const firstReal = week.find(d => d);
+      let label = '';
+      if (firstReal) {
+        const m = Number(firstReal.split('-')[1]) - 1;
+        if (m !== lastMonth) { label = MONTHS[m].slice(0, 3); lastMonth = m; }
+      }
+      html += '<span class="year-month-label">' + label + '</span>';
+    });
+    html += '</div>';
+
+    html += '<div class="year-body">';
+    html += '<div class="year-daylabels"><span>L</span><span></span><span>M</span><span></span><span>V</span><span></span><span>D</span></div>';
+    html += '<div class="year-cols" style="grid-template-columns: repeat(' + weeks.length + ', 11px);">';
+    weeks.forEach(week => {
+      week.forEach(ds => {
+        if (!ds) { html += '<span class="year-day empty"></span>'; return; }
+        if (ds > todayDs) { html += '<span class="year-day future"></span>'; return; }
+        const ratio = dayCompletionRatio(ds);
+        let levelClass = 'no-schedule';
+        if (ratio !== null) {
+          if (ratio === 0) levelClass = 'level-0';
+          else if (ratio < 0.5) levelClass = 'level-1';
+          else if (ratio < 1) levelClass = 'level-2';
+          else levelClass = 'level-3';
+        }
+        const isToday = ds === todayDs;
+        const isSelected = selectedDay === ds;
+        html += '<button class="year-day ' + levelClass + (isToday ? ' today' : '') + (isSelected ? ' selected' : '') + '" data-action="select-day" data-date="' + ds + '" aria-label="' + ds + '"></button>';
+      });
+    });
+    html += '</div></div></div></div>';
+
+    if (selectedDay) html += renderDayDetail(selectedDay);
+    return html;
+  }
+
+  function attachEvents() {
+    root.querySelectorAll('[data-action]').forEach(el => {
+      if (el.tagName === 'INPUT' || el.tagName === 'SELECT') return;
+      el.addEventListener('click', () => {
+        const action = el.getAttribute('data-action');
+        if (action === 'prev') changeMonth(-1);
+        else if (action === 'next') changeMonth(1);
+        else if (action === 'prev-year') changeYear(-1);
+        else if (action === 'next-year') changeYear(1);
+        else if (action === 'add') {
+          const input = document.getElementById('new-habit-input');
+          addHabit(input.value);
+        }
+        else if (action === 'del') removeHabit(el.getAttribute('data-id'));
+        else if (action === 'pause') togglePause(el.getAttribute('data-id'));
+        else if (action === 'toggle') toggleEntry(el.getAttribute('data-date'), el.getAttribute('data-habit'));
+        else if (action === 'retry-save') save();
+        else if (action === 'view-grid') setView('grid');
+        else if (action === 'view-calendar') setView('calendar');
+        else if (action === 'view-year') setView('year');
+        else if (action === 'view-habits') setView('habits');
+        else if (action === 'view-tasks') setView('tasks');
+        else if (action === 'toggle-day') toggleHabitDay(el.getAttribute('data-id'), Number(el.getAttribute('data-dow')));
+        else if (action === 'select-day') selectDay(el.getAttribute('data-date'));
+        else if (action === 'close-day') selectDay(selectedDay);
+        else if (action === 'export') exportBackup();
+        else if (action === 'todo-toggle') toggleTodo(el.getAttribute('data-date'), el.getAttribute('data-todo'));
+        else if (action === 'todo-del') deleteTodo(el.getAttribute('data-date'), el.getAttribute('data-todo'));
+        else if (action === 'todo-time') {
+          const ti2 = document.getElementById('todotime-' + el.getAttribute('data-todo'));
+          if (ti2) {
+            if (ti2.showPicker) { try { ti2.showPicker(); } catch (e) { ti2.click(); } }
+            else { ti2.click(); }
+          }
+        }
+        else if (action === 'todo-stash') stashTodoToPending(el.getAttribute('data-date'), el.getAttribute('data-todo'));
+        else if (action === 'todo-add') {
+          const ti = document.getElementById('todo-input');
+          addTodo(el.getAttribute('data-date'), ti.value);
+        }
+        else if (action === 'add-list') {
+          const li = document.getElementById('new-list-input');
+          addList(li.value);
+        }
+        else if (action === 'del-list') deleteList(el.getAttribute('data-id'));
+        else if (action === 'toggle-collapse') toggleListCollapse(el.getAttribute('data-id'));
+        else if (action === 'add-task') {
+          const listId = el.getAttribute('data-list');
+          const ai = document.getElementById('add-task-' + listId);
+          addBacklogTask(listId, ai.value);
+        }
+        else if (action === 'del-task') deleteBacklogTask(el.getAttribute('data-id'));
+        else if (action === 'task-today') assignTaskToDay(el.getAttribute('data-id'), todayStr());
+        else if (action === 'task-otherday') {
+          const dInput = document.getElementById('date-' + el.getAttribute('data-id'));
+          if (dInput) {
+            if (dInput.showPicker) { try { dInput.showPicker(); } catch (e) { dInput.click(); } }
+            else { dInput.click(); }
+          }
+        }
+        else if (action === 'import-trigger') {
+          const f = document.getElementById('import-file');
+          if (f) f.click();
+        }
+      });
+    });
+    root.querySelectorAll('input[data-action="color"]').forEach(el => {
+      el.addEventListener('input', () => updateHabitColor(el.getAttribute('data-id'), el.value));
+    });
+    root.querySelectorAll('.backlog-task .drag-handle').forEach(handle => {
+      const taskEl = handle.closest('.backlog-task');
+      const taskId = taskEl.getAttribute('data-task-id');
+      handle.addEventListener('pointerdown', (e) => startDrag(e, taskId, taskEl));
+    });
+    root.querySelectorAll('.habit-card .drag-handle').forEach(handle => {
+      const cardEl = handle.closest('.habit-card');
+      const habitId = cardEl.getAttribute('data-habit-id');
+      handle.addEventListener('pointerdown', (e) => startHabitDrag(e, habitId, cardEl));
+    });
+    root.querySelectorAll('.todo-row .drag-handle').forEach(handle => {
+      const rowEl = handle.closest('.todo-row');
+      const todoId = rowEl.getAttribute('data-todo-id');
+      handle.addEventListener('pointerdown', (e) => startTodoDrag(e, selectedDay, todoId, rowEl));
+    });
+    root.querySelectorAll('.list-card-head .drag-handle').forEach(handle => {
+      const cardEl = handle.closest('.list-card');
+      const listId = cardEl.getAttribute('data-list-id');
+      handle.addEventListener('pointerdown', (e) => startListDrag(e, listId, cardEl));
+    });
+    root.querySelectorAll('[data-action="edit-todo"]').forEach(el => {
+      el.addEventListener('dblclick', () => enterEditTodo(el.getAttribute('data-date'), el.getAttribute('data-todo')));
+    });
+    root.querySelectorAll('[data-action="edit-task"]').forEach(el => {
+      el.addEventListener('dblclick', () => enterEditTask(el.getAttribute('data-id')));
+    });
+    root.querySelectorAll('[data-action="edit-list"]').forEach(el => {
+      el.addEventListener('dblclick', () => enterEditList(el.getAttribute('data-id')));
+    });
+    root.querySelectorAll('.inline-edit-input').forEach(el => {
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+        else if (e.key === 'Escape') {
+          if (el.id.startsWith('edit-todo-')) cancelEditTodo();
+          else if (el.id.startsWith('edit-task-')) cancelEditTask();
+          else if (el.id.startsWith('edit-list-')) cancelEditList();
+        }
+      });
+      el.addEventListener('blur', () => {
+        if (el.id.startsWith('edit-todo-')) commitTodoEdit(el.getAttribute('data-ds'), el.getAttribute('data-id'), el.value);
+        else if (el.id.startsWith('edit-task-')) commitTaskEdit(el.getAttribute('data-id'), el.value);
+        else if (el.id.startsWith('edit-list-')) commitListEdit(el.getAttribute('data-id'), el.value);
+      });
+    });
+    root.querySelectorAll('.task-date-hidden').forEach(el => {
+      el.addEventListener('change', () => assignTaskToDay(el.getAttribute('data-id'), el.value));
+    });
+    root.querySelectorAll('.todo-time-hidden').forEach(el => {
+      el.addEventListener('change', () => setTodoTime(el.getAttribute('data-date'), el.getAttribute('data-todo'), el.value));
+    });
+    const newListInput = document.getElementById('new-list-input');
+    if (newListInput) {
+      newListInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addList(newListInput.value);
+      });
+    }
+    root.querySelectorAll('input[id^="add-task-"]').forEach(el => {
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const listId = el.id.replace('add-task-', '');
+          addBacklogTask(listId, el.value);
+        }
+      });
+    });
+    const input = document.getElementById('new-habit-input');
+    if (input) {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addHabit(input.value);
+      });
+    }
+    const todoInput = document.getElementById('todo-input');
+    if (todoInput) {
+      todoInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addTodo(selectedDay, todoInput.value);
+      });
+    }
+    const reminderToggle = document.getElementById('reminder-toggle');
+    if (reminderToggle) {
+      reminderToggle.addEventListener('change', () => setReminder(reminderToggle.checked, reminder.time));
+    }
+    const reminderTime = document.getElementById('reminder-time');
+    if (reminderTime) {
+      reminderTime.addEventListener('change', () => setReminder(reminder.enabled, reminderTime.value));
+    }
+    const importFile = document.getElementById('import-file');
+    if (importFile) {
+      importFile.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => importBackup(reader.result);
+        reader.readAsText(file);
+      });
+    }
+  }
+
+  let authMode = 'login';
+  let authError = '';
+
+  function translateAuthError(code) {
+    const map = {
+      'auth/invalid-email': 'El correo no es válido.',
+      'auth/user-not-found': 'No existe una cuenta con ese correo.',
+      'auth/wrong-password': 'Contraseña incorrecta.',
+      'auth/email-already-in-use': 'Ya existe una cuenta con ese correo.',
+      'auth/weak-password': 'La contraseña tiene que tener al menos 6 caracteres.',
+      'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+      'auth/popup-closed-by-user': 'Se cerró la ventana de Google antes de terminar.',
+      'auth/network-request-failed': 'Sin conexión a internet.'
+    };
+    return map[code] || 'Ocurrió un error. Probá de nuevo.';
+  }
+
+  function renderAuthScreen() {
+    const el = document.getElementById('auth-screen');
+    if (!el) return;
+    let html = '<h1>Bitácora</h1>';
+    html += '<div class="auth-sub">' + (authMode === 'login' ? 'Iniciá sesión para continuar' : 'Creá tu cuenta') + '</div>';
+    if (authError) html += '<div class="auth-error">' + escapeHtml(authError) + '</div>';
+    html += '<input type="email" id="auth-email" placeholder="Correo electrónico" autocomplete="email">';
+    html += '<input type="password" id="auth-password" placeholder="Contraseña" autocomplete="' + (authMode === 'login' ? 'current-password' : 'new-password') + '">';
+    html += '<button class="auth-submit" id="auth-submit-btn">' + (authMode === 'login' ? 'Iniciar sesión' : 'Crear cuenta') + '</button>';
+    if (authMode === 'login') {
+      html += '<button class="auth-forgot" id="auth-forgot-btn">¿Olvidaste tu contraseña?</button>';
+    }
+    html += '<div class="auth-divider">o</div>';
+    html += '<button class="auth-google" id="auth-google-btn">Continuar con Google</button>';
+    html += '<div class="auth-switch">';
+    html += authMode === 'login'
+      ? '¿No tenés cuenta? <button id="auth-switch-btn">Creá una</button>'
+      : '¿Ya tenés cuenta? <button id="auth-switch-btn">Iniciá sesión</button>';
+    html += '</div>';
+    el.innerHTML = html;
+
+    document.getElementById('auth-submit-btn').addEventListener('click', handleEmailAuth);
+    document.getElementById('auth-google-btn').addEventListener('click', handleGoogleAuth);
+    document.getElementById('auth-switch-btn').addEventListener('click', () => {
+      authMode = authMode === 'login' ? 'signup' : 'login';
+      authError = '';
+      renderAuthScreen();
+    });
+    const forgotBtn = document.getElementById('auth-forgot-btn');
+    if (forgotBtn) forgotBtn.addEventListener('click', handlePasswordReset);
+    ['auth-email', 'auth-password'].forEach(id => {
+      const inp = document.getElementById(id);
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleEmailAuth(); });
+    });
+  }
+
+  async function handleEmailAuth() {
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    authError = '';
+    if (!email || !password) { authError = 'Completá correo y contraseña.'; renderAuthScreen(); return; }
+    try {
+      if (authMode === 'login') {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+      }
+    } catch (e) {
+      authError = translateAuthError(e.code);
+      renderAuthScreen();
+    }
+  }
+
+  async function handleGoogleAuth() {
+    authError = '';
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (e) {
+      authError = translateAuthError(e.code);
+      renderAuthScreen();
+    }
+  }
+
+  async function handlePasswordReset() {
+    const email = document.getElementById('auth-email').value.trim();
+    if (!email) { authError = 'Escribí tu correo arriba primero.'; renderAuthScreen(); return; }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      authError = '';
+      alert('Te enviamos un correo para restablecer tu contraseña.');
+    } catch (e) {
+      authError = translateAuthError(e.code);
+      renderAuthScreen();
+    }
+  }
+
+  async function handleLogout() {
+    if (realtimeRef) { off(realtimeRef); realtimeRef = null; }
+    await signOut(auth);
+  }
+
+  function renderUserBar() {
+    const el = document.getElementById('app-header-user');
+    if (!el || !currentUser) return;
+    el.innerHTML = '<span>' + escapeHtml(currentUser.email || 'Sesión activa') + '</span><button id="logout-btn">Cerrar sesión</button>';
+    document.getElementById('logout-btn').addEventListener('click', handleLogout);
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app-wrapper').style.display = 'block';
+      renderUserBar();
+      load();
+    } else {
+      currentUser = null;
+      document.getElementById('app-wrapper').style.display = 'none';
+      document.getElementById('auth-screen').style.display = 'block';
+      renderAuthScreen();
+    }
+  });
+})();
+</script>
+
+</div>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW no registrado', err));
+    });
+  }
+</script>
+</body>
+</html>
