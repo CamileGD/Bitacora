@@ -1,9 +1,13 @@
-const CACHE_NAME = 'bitacora-v10';
-const ASSETS = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
+const CACHE_NAME = 'bitacora-v11';
+const ASSETS = ['./index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => {
+      return Promise.all(
+        ASSETS.map((url) => cache.add(url).catch((err) => console.warn('No se pudo cachear', url, err)))
+      );
+    })
   );
   self.skipWaiting();
 });
