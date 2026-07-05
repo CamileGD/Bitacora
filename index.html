@@ -715,12 +715,31 @@
   }
   #app .task-card.paused { opacity: 0.5; }
 
-  #app .day-todo-wrap { padding: 6px 14px 14px; }
-  #app .day-todo-label {
+  #app .day-section { border-bottom: 1px solid var(--paper-line); }
+  #app .day-section:last-child { border-bottom: none; }
+  #app .day-section-head {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 11px 14px;
+    font-family: 'Space Mono', monospace;
     font-size: 11.5px;
-    color: var(--ink-soft);
-    margin: 10px 0 8px;
+    font-weight: 700;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: left;
   }
+  #app .day-section-head .chevron {
+    color: var(--ink-soft);
+    font-size: 11px;
+    width: 10px;
+  }
+  #app .day-todo-wrap { padding: 0 14px 14px; }
   #app .day-todo-list { margin-bottom: 10px; }
   #app .todo-row {
     display: flex;
@@ -1115,6 +1134,7 @@ const db = getDatabase(firebaseApp);
   let habits = [];
   let entries = {};
   let todos = {};
+  let dayUI = {};
   let lists = [{ id: 'pending', name: 'Guardadas' }];
   let backlogTasks = [];
   let reminder = { enabled: false, time: '20:00' };
@@ -1200,6 +1220,7 @@ const db = getDatabase(firebaseApp);
       }
       needsSave = true;
     }
+    dayUI = (rawData && rawData.dayUI) ? rawData.dayUI : {};
     lists = (rawData && rawData.lists) ? rawData.lists : [{ id: 'pending', name: 'Guardadas' }];
     if (!lists.find(l => l.id === 'pending')) lists.unshift({ id: 'pending', name: 'Guardadas' });
     const pendingRef = lists.find(l => l.id === 'pending');
@@ -1237,6 +1258,7 @@ const db = getDatabase(firebaseApp);
       lastNotified = (data.lastNotified !== undefined) ? data.lastNotified : lastNotified;
       lists = data.lists || lists;
       backlogTasks = data.backlogTasks || [];
+      dayUI = data.dayUI || dayUI;
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
       render();
     });
@@ -1260,7 +1282,7 @@ const db = getDatabase(firebaseApp);
     saveStatus = 'saving';
     updateStatusUI();
     if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
-    const payload = { habits, entries, todos, reminder, lastNotified, lists, backlogTasks };
+    const payload = { habits, entries, todos, reminder, lastNotified, lists, backlogTasks, dayUI };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
     try {
       await set(userDataRef(), payload);
@@ -1451,7 +1473,7 @@ const db = getDatabase(firebaseApp);
       if (wrap && todayHead) {
         const wrapRect = wrap.getBoundingClientRect();
         const cellRect = todayHead.getBoundingClientRect();
-        wrap.scrollLeft += (cellRect.left - wrapRect.left);
+        wrap.scrollLeft += (cellRect.right - wrapRect.right);
       }
     });
   }
@@ -1471,6 +1493,14 @@ const db = getDatabase(firebaseApp);
 
   function selectDay(ds) {
     selectedDay = selectedDay === ds ? null : ds;
+    render();
+  }
+
+  function toggleDaySection(ds, section) {
+    if (!dayUI[ds]) dayUI[ds] = {};
+    const key = section === 'habits' ? 'habitsCollapsed' : 'tasksCollapsed';
+    dayUI[ds][key] = !dayUI[ds][key];
+    save();
     render();
   }
 
@@ -1973,7 +2003,7 @@ const db = getDatabase(firebaseApp);
   }
 
   function exportBackup() {
-    const data = { habits: habits, entries: entries, todos: todos, reminder: reminder, lists: lists, backlogTasks: backlogTasks, exportedAt: new Date().toISOString() };
+    const data = { habits: habits, entries: entries, todos: todos, reminder: reminder, lists: lists, backlogTasks: backlogTasks, dayUI: dayUI, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1996,6 +2026,7 @@ const db = getDatabase(firebaseApp);
       lists = data.lists || [{ id: 'pending', name: 'Guardadas' }];
       if (!lists.find(l => l.id === 'pending')) lists.unshift({ id: 'pending', name: 'Guardadas' });
       backlogTasks = data.backlogTasks || [];
+      dayUI = data.dayUI || {};
       importStatus = 'ok';
       save();
       scheduleReminderCheck();
@@ -2313,46 +2344,65 @@ const db = getDatabase(firebaseApp);
     const dow = dowMon0(wdate.getFullYear(), wdate.getMonth(), wdate.getDate());
     const wd = DOWS_FULL[dow];
     const dayHabitsScheduled = activeHabits().filter(h => (h.activeDays || ALL_DAYS).includes(dow));
+    const ui = dayUI[ds] || {};
+    const habitsCollapsed = !!ui.habitsCollapsed;
+    const tasksCollapsed = !!ui.tasksCollapsed;
+
     let html = '<div class="day-detail">';
     html += '<div class="day-detail-head"><span>' + wd + ', ' + Number(sd) + ' de ' + MONTHS[sm - 1] + '</span><button data-action="close-day" aria-label="Cerrar">×</button></div>';
-    if (dayHabitsScheduled.length === 0) {
-      html += '<div class="empty" style="border:none; padding:16px 14px;">Ningún hábito programado para este día.</div>';
-    }
-    dayHabitsScheduled.forEach(h => {
-      const on = entries[ds] && entries[ds].includes(h.id);
-      html += '<button class="day-toggle-row' + (on ? ' on' : '') + '" data-action="toggle" data-date="' + ds + '" data-habit="' + h.id + '">';
-      html += '<span class="day-toggle-circle" style="' + (on ? 'border-color:' + h.color : '') + '">';
-      if (on) html += checkSvg(h.color);
-      html += '</span><span>' + escapeHtml(h.name) + '</span></button>';
-    });
-    html += '<div class="day-todo-wrap"><div class="day-todo-label">Para hacer</div>';
-    html += '<div class="day-todo-list">';
-    const todoList = todos[ds] || [];
-    if (todoList.length === 0) {
-      html += '<div class="todo-empty">Sin tareas para este día.</div>';
-    }
-    todoList.forEach(t => {
-      html += '<div class="todo-row' + (t.done ? ' done' : '') + (t.missed ? ' missed' : '') + '" data-todo-id="' + t.id + '">';
-      html += '<span class="drag-handle" aria-hidden="true">⠿</span>';
-      html += '<button class="todo-check" data-action="todo-toggle" data-date="' + ds + '" data-todo="' + t.id + '" aria-label="' + (t.done ? 'Marcar como pendiente' : 'Marcar como hecho') + '">';
-      if (t.done) html += checkSvg('#fff');
-      html += '</button>';
-      if (editingTodo && editingTodo.ds === ds && editingTodo.id === t.id) {
-        html += '<input type="text" class="inline-edit-input" id="edit-todo-' + t.id + '" value="' + escapeHtml(t.text) + '" maxlength="60" data-ds="' + ds + '" data-id="' + t.id + '">';
-      } else {
-        html += '<span class="todo-text" data-action="edit-todo" data-date="' + ds + '" data-todo="' + t.id + '">' + escapeHtml(t.text) + (t.missed ? ' <span class="missed-tag">no cumplida</span>' : '') + '</span>';
+
+    html += '<div class="day-section">';
+    html += '<button class="day-section-head" data-action="toggle-day-section" data-date="' + ds + '" data-section="habits">';
+    html += '<span class="chevron">' + (habitsCollapsed ? '▸' : '▾') + '</span><span>Hábitos</span></button>';
+    if (!habitsCollapsed) {
+      if (dayHabitsScheduled.length === 0) {
+        html += '<div class="empty" style="border:none; padding:14px;">Ningún hábito programado para este día.</div>';
       }
-      if (!t.done) {
-        html += '<button class="task-btn icon-btn' + (t.time ? ' has-time' : '') + '" data-action="todo-time" data-date="' + ds + '" data-todo="' + t.id + '">' + (t.time ? t.time : alarmSvg()) + '</button>';
-        html += '<input type="time" class="todo-time-hidden" id="todotime-' + t.id + '" data-date="' + ds + '" data-todo="' + t.id + '" value="' + (t.time || '') + '">';
-        html += '<button class="task-btn icon-btn" data-action="todo-stash" data-date="' + ds + '" data-todo="' + t.id + '"' + (t.missed ? ' disabled' : '') + ' aria-label="Guardar para más tarde">' + archiveSvg() + '</button>';
+      dayHabitsScheduled.forEach(h => {
+        const on = entries[ds] && entries[ds].includes(h.id);
+        html += '<button class="day-toggle-row' + (on ? ' on' : '') + '" data-action="toggle" data-date="' + ds + '" data-habit="' + h.id + '">';
+        html += '<span class="day-toggle-circle" style="' + (on ? 'border-color:' + h.color : '') + '">';
+        if (on) html += checkSvg(h.color);
+        html += '</span><span>' + escapeHtml(h.name) + '</span></button>';
+      });
+    }
+    html += '</div>';
+
+    html += '<div class="day-section">';
+    html += '<button class="day-section-head" data-action="toggle-day-section" data-date="' + ds + '" data-section="tasks">';
+    html += '<span class="chevron">' + (tasksCollapsed ? '▸' : '▾') + '</span><span>Tareas</span></button>';
+    if (!tasksCollapsed) {
+      html += '<div class="day-todo-wrap">';
+      html += '<div class="day-todo-list">';
+      const todoList = todos[ds] || [];
+      if (todoList.length === 0) {
+        html += '<div class="todo-empty">Sin tareas para este día.</div>';
       }
-      html += '<button class="todo-del" data-action="todo-del" data-date="' + ds + '" data-todo="' + t.id + '" aria-label="Eliminar tarea">×</button>';
+      todoList.forEach(t => {
+        html += '<div class="todo-row' + (t.done ? ' done' : '') + (t.missed ? ' missed' : '') + '" data-todo-id="' + t.id + '">';
+        html += '<span class="drag-handle" aria-hidden="true">⠿</span>';
+        html += '<button class="todo-check" data-action="todo-toggle" data-date="' + ds + '" data-todo="' + t.id + '" aria-label="' + (t.done ? 'Marcar como pendiente' : 'Marcar como hecho') + '">';
+        if (t.done) html += checkSvg('#fff');
+        html += '</button>';
+        if (editingTodo && editingTodo.ds === ds && editingTodo.id === t.id) {
+          html += '<input type="text" class="inline-edit-input" id="edit-todo-' + t.id + '" value="' + escapeHtml(t.text) + '" maxlength="60" data-ds="' + ds + '" data-id="' + t.id + '">';
+        } else {
+          html += '<span class="todo-text" data-action="edit-todo" data-date="' + ds + '" data-todo="' + t.id + '">' + escapeHtml(t.text) + (t.missed ? ' <span class="missed-tag">no cumplida</span>' : '') + '</span>';
+        }
+        if (!t.done) {
+          html += '<button class="task-btn icon-btn' + (t.time ? ' has-time' : '') + '" data-action="todo-time" data-date="' + ds + '" data-todo="' + t.id + '">' + (t.time ? t.time : alarmSvg()) + '</button>';
+          html += '<input type="time" class="todo-time-hidden" id="todotime-' + t.id + '" data-date="' + ds + '" data-todo="' + t.id + '" value="' + (t.time || '') + '">';
+          html += '<button class="task-btn icon-btn" data-action="todo-stash" data-date="' + ds + '" data-todo="' + t.id + '"' + (t.missed ? ' disabled' : '') + ' aria-label="Guardar para más tarde">' + archiveSvg() + '</button>';
+        }
+        html += '<button class="todo-del" data-action="todo-del" data-date="' + ds + '" data-todo="' + t.id + '" aria-label="Eliminar tarea">×</button>';
+        html += '</div>';
+      });
       html += '</div>';
-    });
+      html += '<div class="todo-add-row"><input type="text" id="todo-input" placeholder="Agregar tarea…" maxlength="60"><button data-action="todo-add" data-date="' + ds + '">+</button></div>';
+      html += '</div>';
+    }
     html += '</div>';
-    html += '<div class="todo-add-row"><input type="text" id="todo-input" placeholder="Agregar tarea…" maxlength="60"><button data-action="todo-add" data-date="' + ds + '">+</button></div>';
-    html += '</div>';
+
     html += '</div>';
     return html;
   }
@@ -2452,6 +2502,7 @@ const db = getDatabase(firebaseApp);
         else if (action === 'toggle-day') toggleHabitDay(el.getAttribute('data-id'), Number(el.getAttribute('data-dow')));
         else if (action === 'select-day') selectDay(el.getAttribute('data-date'));
         else if (action === 'close-day') selectDay(selectedDay);
+        else if (action === 'toggle-day-section') toggleDaySection(el.getAttribute('data-date'), el.getAttribute('data-section'));
         else if (action === 'export') exportBackup();
         else if (action === 'todo-toggle') toggleTodo(el.getAttribute('data-date'), el.getAttribute('data-todo'));
         else if (action === 'todo-del') deleteTodo(el.getAttribute('data-date'), el.getAttribute('data-todo'));
