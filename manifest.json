@@ -1,13 +1,16 @@
 {
+  "id": "/index.html",
   "name": "Bitácora",
   "short_name": "Bitácora",
-  "description": "Seguimiento diario de hábitos",
+  "description": "Seguimiento diario de hábitos, tareas y calendario personal",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#E8E4D6",
   "theme_color": "#262F2B",
+  "categories": ["productivity", "lifestyle"],
+  "lang": "es",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }

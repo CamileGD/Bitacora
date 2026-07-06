@@ -307,12 +307,13 @@
     color: var(--paper);
     border: none;
     border-radius: 8px;
-    padding: 0 18px;
-    font-size: 13px;
+    width: 42px;
+    flex-shrink: 0;
+    font-size: 19px;
     font-weight: 600;
     font-family: 'Inter', sans-serif;
     cursor: pointer;
-    white-space: nowrap;
+    line-height: 1;
   }
   #app .add-row button:hover { opacity: 0.85; }
 
@@ -585,6 +586,33 @@
     font-family: 'Space Mono', monospace;
     font-size: 12px;
     font-weight: 700;
+  }
+  #app .cal-num-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+  }
+  #app .cal-num-wrap .sun-rays {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  #app .cal-num-wrap .cal-num {
+    position: relative;
+    z-index: 1;
+  }
+  #app .cal-cell .cal-num.has-event {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2.5px solid var(--gold);
   }
   #app .cal-cell.today { border-color: var(--ink); border-width: 2px; }
   #app .cal-cell.selected { background: rgba(0,0,0,0.045); border-color: var(--ink); }
@@ -1067,14 +1095,40 @@
     background: #fff;
     outline: none;
   }
-  #app .task-date-hidden, #app .todo-time-hidden {
+  #app .task-date-hidden, #app .todo-time-hidden, #app .event-date-hidden {
     position: absolute;
     width: 1px;
     height: 1px;
     opacity: 0;
     pointer-events: none;
   }
-
+  #app .event-row {
+    border-bottom: 1px solid var(--paper-line);
+    padding: 10px 0;
+  }
+  #app .event-row:last-of-type { border-bottom: none; }
+  #app .event-row-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  #app .event-text {
+    flex: 1;
+    font-size: 13.5px;
+    color: var(--ink);
+    cursor: text;
+  }
+  #app .event-row-bottom {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  #app .event-date-btn.needs-date {
+    border-color: var(--stamp-1);
+    color: var(--stamp-1);
+  }
   #app .list-card.drop-target {
     border-color: var(--ink);
     background: rgba(0,0,0,0.03);
@@ -1135,6 +1189,7 @@ const db = getDatabase(firebaseApp);
   let entries = {};
   let todos = {};
   let dayUI = {};
+  let events = [];
   let lists = [{ id: 'pending', name: 'Guardadas' }];
   let backlogTasks = [];
   let reminder = { enabled: false, time: '20:00' };
@@ -1153,6 +1208,7 @@ const db = getDatabase(firebaseApp);
   let editingTodo = null;
   let editingTaskId = null;
   let editingListId = null;
+  let editingEventId = null;
   let todoDragState = null;
   let listDragState = null;
 
@@ -1221,6 +1277,7 @@ const db = getDatabase(firebaseApp);
       needsSave = true;
     }
     dayUI = (rawData && rawData.dayUI) ? rawData.dayUI : {};
+    events = (rawData && rawData.events) ? rawData.events : [];
     lists = (rawData && rawData.lists) ? rawData.lists : [{ id: 'pending', name: 'Guardadas' }];
     if (!lists.find(l => l.id === 'pending')) lists.unshift({ id: 'pending', name: 'Guardadas' });
     const pendingRef = lists.find(l => l.id === 'pending');
@@ -1259,6 +1316,7 @@ const db = getDatabase(firebaseApp);
       lists = data.lists || lists;
       backlogTasks = data.backlogTasks || [];
       dayUI = data.dayUI || dayUI;
+      events = data.events || events;
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
       render();
     });
@@ -1282,7 +1340,7 @@ const db = getDatabase(firebaseApp);
     saveStatus = 'saving';
     updateStatusUI();
     if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
-    const payload = { habits, entries, todos, reminder, lastNotified, lists, backlogTasks, dayUI };
+    const payload = { habits, entries, todos, reminder, lastNotified, lists, backlogTasks, dayUI, events };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
     try {
       await set(userDataRef(), payload);
@@ -1454,7 +1512,7 @@ const db = getDatabase(firebaseApp);
 
   function setView(v) {
     view = v;
-    selectedDay = (v === 'calendar' || v === 'year') ? todayStr() : null;
+    selectedDay = (v === 'calendar') ? todayStr() : null;
     render();
     if (v === 'grid') scrollGridToToday();
     if (v === 'year') scrollYearToToday();
@@ -1494,6 +1552,66 @@ const db = getDatabase(firebaseApp);
   function selectDay(ds) {
     selectedDay = selectedDay === ds ? null : ds;
     render();
+  }
+
+  function addEvent(text) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const id = 'ev' + Date.now() + Math.floor(Math.random() * 10000);
+    events.push({ id: id, text: trimmed, date: null });
+    save();
+    render();
+    const el = document.getElementById('event-date-' + id);
+    if (el) {
+      if (el.showPicker) { try { el.showPicker(); } catch (e) { el.click(); } }
+      else { el.click(); }
+    }
+  }
+
+  function setEventDate(id, date) {
+    const ev = events.find(e => e.id === id);
+    if (!ev) return;
+    ev.date = date || null;
+    save();
+    render();
+  }
+
+  function deleteEvent(id) {
+    events = events.filter(e => e.id !== id);
+    save();
+    render();
+  }
+
+  function enterEditEvent(id) {
+    editingEventId = id;
+    render();
+    const el = document.getElementById('edit-event-' + id);
+    if (el) { el.focus(); el.select(); }
+  }
+
+  function commitEventEdit(id, value) {
+    const ev = events.find(e => e.id === id);
+    if (ev) {
+      const trimmed = value.trim();
+      if (trimmed) ev.text = trimmed;
+    }
+    editingEventId = null;
+    save();
+    render();
+  }
+
+  function cancelEditEvent() {
+    editingEventId = null;
+    render();
+  }
+
+  function formatShortDate(ds) {
+    const [, m, d] = ds.split('-').map(Number);
+    return Number(d) + ' ' + MONTHS[m - 1].slice(0, 3);
+  }
+
+  function eventForDay(ds) {
+    return events.find(e => e.date === ds);
   }
 
   function toggleDaySection(ds, section) {
@@ -2003,7 +2121,7 @@ const db = getDatabase(firebaseApp);
   }
 
   function exportBackup() {
-    const data = { habits: habits, entries: entries, todos: todos, reminder: reminder, lists: lists, backlogTasks: backlogTasks, dayUI: dayUI, exportedAt: new Date().toISOString() };
+    const data = { habits: habits, entries: entries, todos: todos, reminder: reminder, lists: lists, backlogTasks: backlogTasks, dayUI: dayUI, events: events, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2027,6 +2145,7 @@ const db = getDatabase(firebaseApp);
       if (!lists.find(l => l.id === 'pending')) lists.unshift({ id: 'pending', name: 'Guardadas' });
       backlogTasks = data.backlogTasks || [];
       dayUI = data.dayUI || {};
+      events = data.events || [];
       importStatus = 'ok';
       save();
       scheduleReminderCheck();
@@ -2048,6 +2167,20 @@ const db = getDatabase(firebaseApp);
 
   function checkSvg(color) {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 18 20 6"></polyline></svg>';
+  }
+
+  function sunRaysSvg() {
+    const cx = 20, cy = 20, rInner = 16, rOuter = 19.5, count = 8;
+    let rays = '';
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count;
+      const x1 = (cx + rInner * Math.cos(angle)).toFixed(1);
+      const y1 = (cy + rInner * Math.sin(angle)).toFixed(1);
+      const x2 = (cx + rOuter * Math.cos(angle)).toFixed(1);
+      const y2 = (cy + rOuter * Math.sin(angle)).toFixed(1);
+      rays += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#C79B3B" stroke-width="2" stroke-linecap="round"/>';
+    }
+    return '<svg class="sun-rays" viewBox="0 0 40 40" aria-hidden="true">' + rays + '</svg>';
   }
 
   function alarmSvg() {
@@ -2110,6 +2243,7 @@ const db = getDatabase(firebaseApp);
     html += '<button data-action="view-calendar" class="' + (view === 'calendar' ? 'active' : '') + '">Calendario</button>';
     html += '<button data-action="view-grid" class="' + (view === 'grid' ? 'active' : '') + '">Grilla</button>';
     html += '<button data-action="view-tasks" class="' + (view === 'tasks' ? 'active' : '') + '">Tareas</button>';
+    html += '<button data-action="view-events" class="' + (view === 'events' ? 'active' : '') + '">Eventos</button>';
     html += '<button data-action="view-habits" class="' + (view === 'habits' ? 'active' : '') + '">Hábitos</button>';
     html += '<button data-action="view-year" class="' + (view === 'year' ? 'active' : '') + '">Año</button>';
     html += '</div>';
@@ -2120,6 +2254,8 @@ const db = getDatabase(firebaseApp);
       html += renderHabitsTab();
     } else if (view === 'tasks') {
       html += renderTasksTab();
+    } else if (view === 'events') {
+      html += renderEventsTab();
     } else if (habits.length === 0) {
       html += '<div class="empty">Todavía no tenés hábitos. <button class="link-btn" data-action="view-habits">Agregá el primero en Hábitos</button></div>';
     } else if (view === 'grid') {
@@ -2138,7 +2274,7 @@ const db = getDatabase(firebaseApp);
   function renderHabitsTab() {
     let html = '<div class="add-row">';
     html += '<input type="text" id="new-habit-input" placeholder="Ej: Meditar" maxlength="30" />';
-    html += '<button data-action="add">Agregar hábito</button>';
+    html += '<button data-action="add" aria-label="Agregar hábito">+</button>';
     html += '</div>';
 
     if (habits.length === 0) {
@@ -2193,7 +2329,7 @@ const db = getDatabase(firebaseApp);
   function renderTasksTab() {
     let html = '<div class="add-row">';
     html += '<input type="text" id="new-list-input" placeholder="Nueva lista, ej: Tareas hogar" maxlength="30" />';
-    html += '<button data-action="add-list">Agregar lista</button>';
+    html += '<button data-action="add-list" aria-label="Agregar lista">+</button>';
     html += '</div>';
 
     const orderedLists = [lists.find(l => l.id === 'pending')].concat(lists.filter(l => l.id !== 'pending')).filter(Boolean);
@@ -2239,6 +2375,44 @@ const db = getDatabase(firebaseApp);
 
         html += '<div class="todo-add-row"><input type="text" id="add-task-' + list.id + '" placeholder="Agregar tarea…" maxlength="60"><button data-action="add-task" data-list="' + list.id + '">+</button></div>';
       }
+      html += '</div>';
+    });
+
+    return html;
+  }
+
+  function renderEventsTab() {
+    let html = '<div class="add-row">';
+    html += '<input type="text" id="new-event-input" placeholder="Ej: Cumpleaños de mamá" maxlength="60" />';
+    html += '<button data-action="add-event" aria-label="Agregar evento">+</button>';
+    html += '</div>';
+
+    if (events.length === 0) {
+      html += '<div class="empty">Todavía no cargaste eventos.</div>';
+      return html;
+    }
+
+    const sorted = events.slice().sort((a, b) => {
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return -1;
+      if (!b.date) return 1;
+      return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0);
+    });
+
+    sorted.forEach(ev => {
+      html += '<div class="event-row">';
+      html += '<div class="event-row-top">';
+      if (editingEventId === ev.id) {
+        html += '<input type="text" class="inline-edit-input" id="edit-event-' + ev.id + '" value="' + escapeHtml(ev.text) + '" maxlength="60" data-id="' + ev.id + '">';
+      } else {
+        html += '<span class="event-text" data-action="edit-event" data-id="' + ev.id + '">' + escapeHtml(ev.text) + '</span>';
+      }
+      html += '<button class="del-habit" data-action="del-event" data-id="' + ev.id + '" aria-label="Eliminar evento">×</button>';
+      html += '</div>';
+      html += '<div class="event-row-bottom">';
+      html += '<button class="task-btn event-date-btn' + (!ev.date ? ' needs-date' : '') + '" data-action="event-pick-date" data-id="' + ev.id + '">' + (ev.date ? formatShortDate(ev.date) : 'Elegir fecha') + '</button>';
+      html += '<input type="date" class="event-date-hidden" id="event-date-' + ev.id + '" data-id="' + ev.id + '" value="' + (ev.date || '') + '">';
+      html += '</div>';
       html += '</div>';
     });
 
@@ -2323,8 +2497,13 @@ const db = getDatabase(firebaseApp);
       const todosDone = hasTodos && todoList.every(t => t.done);
       const hasMissed = todoList.some(t => t.missed);
       const dayHabits = entries[ds] || [];
+      const dayEvent = eventForDay(ds);
       html += '<button class="cal-cell' + (isToday ? ' today' : '') + (isSelected ? ' selected' : '') + (isComplete ? ' complete' : '') + (hasTodos ? ' has-todo' : '') + (todosDone ? ' todo-complete' : '') + (hasMissed ? ' missed-day' : '') + '" data-action="select-day" data-date="' + ds + '">';
-      html += '<span class="cal-num">' + dayNum + '</span>';
+      if (dayEvent) {
+        html += '<span class="cal-num-wrap" title="' + escapeHtml(dayEvent.text) + '">' + sunRaysSvg() + '<span class="cal-num has-event">' + dayNum + '</span></span>';
+      } else {
+        html += '<span class="cal-num">' + dayNum + '</span>';
+      }
       html += '<div class="cal-dots">';
       activeHabits().forEach(h => {
         if (dayHabits.includes(h.id)) html += '<span class="cal-dot" style="background:' + h.color + '"></span>';
@@ -2467,13 +2646,11 @@ const db = getDatabase(firebaseApp);
           else levelClass = 'level-3';
         }
         const isToday = ds === todayDs;
-        const isSelected = selectedDay === ds;
-        html += '<button class="year-day ' + levelClass + (isToday ? ' today' : '') + (isSelected ? ' selected' : '') + '" data-action="select-day" data-date="' + ds + '" aria-label="' + ds + '"></button>';
+        html += '<button class="year-day ' + levelClass + (isToday ? ' today' : '') + '" data-date="' + ds + '" aria-label="' + ds + '" disabled></button>';
       });
     });
     html += '</div></div></div></div>';
 
-    if (selectedDay) html += renderDayDetail(selectedDay);
     return html;
   }
 
@@ -2498,6 +2675,7 @@ const db = getDatabase(firebaseApp);
         else if (action === 'view-calendar') setView('calendar');
         else if (action === 'view-year') setView('year');
         else if (action === 'view-habits') setView('habits');
+        else if (action === 'view-events') setView('events');
         else if (action === 'view-tasks') setView('tasks');
         else if (action === 'toggle-day') toggleHabitDay(el.getAttribute('data-id'), Number(el.getAttribute('data-dow')));
         else if (action === 'select-day') selectDay(el.getAttribute('data-date'));
@@ -2538,6 +2716,18 @@ const db = getDatabase(firebaseApp);
             else { dInput.click(); }
           }
         }
+        else if (action === 'add-event') {
+          const ei = document.getElementById('new-event-input');
+          addEvent(ei.value);
+        }
+        else if (action === 'del-event') deleteEvent(el.getAttribute('data-id'));
+        else if (action === 'event-pick-date') {
+          const dInput2 = document.getElementById('event-date-' + el.getAttribute('data-id'));
+          if (dInput2) {
+            if (dInput2.showPicker) { try { dInput2.showPicker(); } catch (e) { dInput2.click(); } }
+            else { dInput2.click(); }
+          }
+        }
         else if (action === 'import-trigger') {
           const f = document.getElementById('import-file');
           if (f) f.click();
@@ -2576,6 +2766,9 @@ const db = getDatabase(firebaseApp);
     root.querySelectorAll('[data-action="edit-list"]').forEach(el => {
       el.addEventListener('dblclick', () => enterEditList(el.getAttribute('data-id')));
     });
+    root.querySelectorAll('[data-action="edit-event"]').forEach(el => {
+      el.addEventListener('dblclick', () => enterEditEvent(el.getAttribute('data-id')));
+    });
     root.querySelectorAll('.inline-edit-input').forEach(el => {
       el.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
@@ -2583,12 +2776,14 @@ const db = getDatabase(firebaseApp);
           if (el.id.startsWith('edit-todo-')) cancelEditTodo();
           else if (el.id.startsWith('edit-task-')) cancelEditTask();
           else if (el.id.startsWith('edit-list-')) cancelEditList();
+          else if (el.id.startsWith('edit-event-')) cancelEditEvent();
         }
       });
       el.addEventListener('blur', () => {
         if (el.id.startsWith('edit-todo-')) commitTodoEdit(el.getAttribute('data-ds'), el.getAttribute('data-id'), el.value);
         else if (el.id.startsWith('edit-task-')) commitTaskEdit(el.getAttribute('data-id'), el.value);
         else if (el.id.startsWith('edit-list-')) commitListEdit(el.getAttribute('data-id'), el.value);
+        else if (el.id.startsWith('edit-event-')) commitEventEdit(el.getAttribute('data-id'), el.value);
       });
     });
     root.querySelectorAll('.task-date-hidden').forEach(el => {
@@ -2597,10 +2792,19 @@ const db = getDatabase(firebaseApp);
     root.querySelectorAll('.todo-time-hidden').forEach(el => {
       el.addEventListener('change', () => setTodoTime(el.getAttribute('data-date'), el.getAttribute('data-todo'), el.value));
     });
+    root.querySelectorAll('.event-date-hidden').forEach(el => {
+      el.addEventListener('change', () => setEventDate(el.getAttribute('data-id'), el.value));
+    });
     const newListInput = document.getElementById('new-list-input');
     if (newListInput) {
       newListInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') addList(newListInput.value);
+      });
+    }
+    const newEventInput = document.getElementById('new-event-input');
+    if (newEventInput) {
+      newEventInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addEvent(newEventInput.value);
       });
     }
     root.querySelectorAll('input[id^="add-task-"]').forEach(el => {
