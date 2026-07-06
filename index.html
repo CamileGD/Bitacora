@@ -138,6 +138,17 @@
     gap: 8px;
   }
   #auth-screen button.auth-google:hover { background: var(--paper-deep); }
+  #auth-screen button.auth-guest {
+    width: 100%;
+    background: none;
+    color: var(--ink-soft);
+    border: none;
+    padding: 10px;
+    font-size: 12.5px;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: 6px;
+  }
   #auth-screen .auth-switch {
     text-align: center;
     font-size: 12.5px;
@@ -1157,7 +1168,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/fireba
 import {
   getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
   signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup,
-  sendPasswordResetEmail
+  sendPasswordResetEmail, signInAnonymously
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import { getDatabase, ref, set, get, onValue, off } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
@@ -2859,7 +2870,8 @@ const db = getDatabase(firebaseApp);
       'auth/weak-password': 'La contraseña tiene que tener al menos 6 caracteres.',
       'auth/invalid-credential': 'Correo o contraseña incorrectos.',
       'auth/popup-closed-by-user': 'Se cerró la ventana de Google antes de terminar.',
-      'auth/network-request-failed': 'Sin conexión a internet.'
+      'auth/network-request-failed': 'Sin conexión a internet.',
+      'auth/admin-restricted-operation': 'El acceso como invitado no está activado todavía en Firebase (Authentication → Sign-in method → Anónimo).'
     };
     return map[code] || 'Ocurrió un error. Probá de nuevo.';
   }
@@ -2878,6 +2890,7 @@ const db = getDatabase(firebaseApp);
     }
     html += '<div class="auth-divider">o</div>';
     html += '<button class="auth-google" id="auth-google-btn">Continuar con Google</button>';
+    html += '<button class="auth-guest" id="auth-guest-btn">Entrar como invitado (para probar)</button>';
     html += '<div class="auth-switch">';
     html += authMode === 'login'
       ? '¿No tenés cuenta? <button id="auth-switch-btn">Creá una</button>'
@@ -2887,6 +2900,7 @@ const db = getDatabase(firebaseApp);
 
     document.getElementById('auth-submit-btn').addEventListener('click', handleEmailAuth);
     document.getElementById('auth-google-btn').addEventListener('click', handleGoogleAuth);
+    document.getElementById('auth-guest-btn').addEventListener('click', handleGuestAuth);
     document.getElementById('auth-switch-btn').addEventListener('click', () => {
       authMode = authMode === 'login' ? 'signup' : 'login';
       authError = '';
@@ -2928,6 +2942,16 @@ const db = getDatabase(firebaseApp);
     }
   }
 
+  async function handleGuestAuth() {
+    authError = '';
+    try {
+      await signInAnonymously(auth);
+    } catch (e) {
+      authError = translateAuthError(e.code);
+      renderAuthScreen();
+    }
+  }
+
   async function handlePasswordReset() {
     const email = document.getElementById('auth-email').value.trim();
     if (!email) { authError = 'Escribí tu correo arriba primero.'; renderAuthScreen(); return; }
@@ -2949,7 +2973,8 @@ const db = getDatabase(firebaseApp);
   function renderUserBar() {
     const el = document.getElementById('app-header-user');
     if (!el || !currentUser) return;
-    el.innerHTML = '<span>' + escapeHtml(currentUser.email || 'Sesión activa') + '</span><button id="logout-btn">Cerrar sesión</button>';
+    const label = currentUser.isAnonymous ? 'Invitado (datos temporales)' : (currentUser.email || 'Sesión activa');
+    el.innerHTML = '<span>' + escapeHtml(label) + '</span><button id="logout-btn">Cerrar sesión</button>';
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
   }
 
